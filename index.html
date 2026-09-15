@@ -4,726 +4,141 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Reporte del clima</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
     <style>
-      :root {
-        --bg: #f5f6fb;
-        --card: #ffffff;
-        --border: #e6e7f2;
-        --text: #161827;
-        --text-muted: #6b7089;
-        --accent: #4f46e5;
-        --accent2: #06b6d4;
-        --accent-dark: #3730a3;
-        --rain: #3b82f6;
-        --danger: #dc2626;
-        --warm: #f59e0b;
-        --surface: #f2f3fa;
-        --surface-hover: #e8e9f6;
-        --disabled: #c3c6d6;
-      }
-      * {
-        box-sizing: border-box;
-        -webkit-tap-highlight-color: transparent;
-      }
-      body {
-        margin: 0;
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-          Arial, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        padding: 0 0 60px;
-      }
-      .hero {
-        background: linear-gradient(
-          135deg,
-          var(--accent) 0%,
-          var(--accent2) 100%
-        );
-        color: white;
-        padding: 32px 16px 44px;
-        text-align: center;
-      }
-      .hero h1 {
-        font-size: 24px;
-        font-weight: 700;
-        margin: 0 0 6px;
-        letter-spacing: -0.3px;
-      }
-      .hero p {
-        margin: 0;
-        font-size: 14px;
-        opacity: 0.9;
-      }
-      .wrap {
-        max-width: 680px;
-        margin: -24px auto 0;
-        padding: 0 16px;
-      }
-      #rows {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-bottom: 12px;
-      }
-      form {
-        background: var(--card);
-        border-radius: 16px;
-        padding: 16px;
-        box-shadow: 0 8px 24px rgba(35, 30, 90, 0.08);
-      }
-      .row-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 14px;
-        position: relative;
-      }
-      .row-card .remove-btn {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: none;
-        border: none;
-        color: var(--text-muted);
-        font-size: 18px;
-        line-height: 1;
-        cursor: pointer;
-        padding: 4px;
-      }
-      label {
-        font-size: 12px;
-        color: var(--text-muted);
-        display: block;
-        margin-bottom: 4px;
-      }
-      input[type="text"] {
-        width: 100%;
-        padding: 9px 10px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        font-size: 15px;
-        background: white;
-      }
-      .field {
-        margin-bottom: 10px;
-      }
-      .field:last-child {
-        margin-bottom: 0;
-      }
-      .date-range-btn {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 12px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        font-size: 15px;
-        background: white;
-        color: var(--text);
-        text-align: left;
-        cursor: pointer;
-      }
-      .date-range-btn .cal-emoji {
-        font-size: 16px;
-        flex-shrink: 0;
-      }
-      .date-range-btn.placeholder {
-        color: var(--text-muted);
-      }
-      .add-btn {
-        width: 100%;
-        background: white;
-        color: var(--accent);
-        border: 1px dashed #c7cbe8;
-        padding: 11px;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        margin-bottom: 12px;
-      }
-      button.submit {
-        width: 100%;
-        background: linear-gradient(135deg, var(--accent), var(--accent2));
-        color: white;
-        border: none;
-        padding: 13px;
-        border-radius: 10px;
-        font-size: 15px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      button.submit:active {
-        filter: brightness(0.95);
-      }
-      button.submit:disabled {
-        background: var(--disabled);
-        cursor: default;
-      }
-      #status {
-        font-size: 13px;
-        color: var(--text-muted);
-        margin-top: 10px;
-        min-height: 18px;
-        text-align: center;
-      }
-      #status.error {
-        color: var(--danger);
-      }
-      #report {
-        margin-top: 24px;
-      }
-      .loc-block {
-        background: var(--card);
-        border-radius: 16px;
-        padding: 18px;
-        margin-bottom: 20px;
-        box-shadow: 0 8px 24px rgba(35, 30, 90, 0.06);
-      }
-      .loc-head {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 4px;
-      }
-      .loc-icon {
-        font-size: 30px;
-        line-height: 1;
-      }
-      .location-title {
-        font-size: 18px;
-        font-weight: 700;
-        margin: 0;
-      }
-      .location-sub {
-        font-size: 13px;
-        color: var(--text-muted);
-        margin: 0 0 16px;
-      }
-      .location-sub.error {
-        color: var(--danger);
-      }
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        margin-bottom: 18px;
-      }
-      .stat-card {
-        background: var(--surface);
-        border-radius: 10px;
-        padding: 10px 12px;
-      }
-      .stat-label {
-        font-size: 11px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-        margin: 0 0 3px;
-      }
-      .stat-value {
-        font-size: 19px;
-        font-weight: 700;
-        margin: 0;
-      }
-      .stat-value.warm {
-        color: var(--warm);
-      }
-      .stat-value.cold {
-        color: var(--accent);
-      }
-      .stat-value.rain {
-        color: var(--rain);
-      }
-      .chart-wrap {
-        position: relative;
-        height: 200px;
-        margin-bottom: 18px;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      th,
-      td {
-        padding: 9px 6px;
-        text-align: center;
-        font-size: 13px;
-        border-bottom: 1px solid var(--border);
-      }
-      th {
-        font-weight: 500;
-        color: var(--text-muted);
-        font-size: 11px;
-        text-transform: uppercase;
-      }
-      tr:last-child td {
-        border-bottom: none;
-      }
-      td.day {
-        text-align: left;
-        font-weight: 500;
-      }
-      td.icon {
-        font-size: 17px;
-      }
-      .rain {
-        color: var(--rain);
-      }
-      tbody tr {
-        cursor: pointer;
-      }
-      tbody tr:active {
-        background: var(--surface);
-      }
-      .row-hint {
-        text-align: center;
-        font-size: 11px;
-        color: var(--text-muted);
-        margin-top: 8px;
-      }
-
-      .overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(10, 15, 25, 0.45);
-        display: none;
-        align-items: flex-end;
-        justify-content: center;
-        z-index: 100;
-      }
-      .overlay.open {
-        display: flex;
-      }
-      .drawer {
-        background: var(--card);
-        width: 100%;
-        max-width: 680px;
-        max-height: 88vh;
-        overflow-y: auto;
-        border-radius: 20px 20px 0 0;
-        padding: 20px 20px 24px;
-        transform: translateY(100%);
-        transition: transform 0.25s ease;
-      }
-      .overlay.open .drawer {
-        transform: translateY(0);
-      }
-      .drawer-handle {
-        width: 40px;
-        height: 4px;
-        background: var(--border);
-        border-radius: 2px;
-        margin: 0 auto 16px;
-      }
-      .drawer-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 4px;
-      }
-      .drawer-icon {
-        font-size: 40px;
-      }
-      .drawer-title {
-        font-size: 19px;
-        font-weight: 700;
-        margin: 0;
-      }
-      .drawer-sub {
-        font-size: 13px;
-        color: var(--text-muted);
-        margin: 0 0 18px;
-      }
-      .drawer-close {
-        background: var(--surface);
-        border: none;
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        font-size: 16px;
-        color: var(--text-muted);
-        cursor: pointer;
-        flex-shrink: 0;
-      }
-      .drawer-stats {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        margin-bottom: 16px;
-      }
-      .drawer-stat {
-        background: var(--surface);
-        border-radius: 10px;
-        padding: 10px 12px;
-      }
-      .drawer-stat .k {
-        font-size: 11px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        margin: 0 0 3px;
-      }
-      .drawer-stat .v {
-        font-size: 17px;
-        font-weight: 700;
-        margin: 0;
-      }
-      .reco-box {
-        background: #ecfdf5;
-        border: 1px solid #a7f3d0;
-        border-radius: 12px;
-        padding: 14px;
-        font-size: 14px;
-        line-height: 1.5;
-        color: #065f46;
-      }
-      .reco-box .reco-title {
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: #059669;
-        margin: 0 0 6px;
-      }
-
-      /* calendar drawer */
-      .cal-presets {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 16px;
-      }
-      .cal-preset {
-        background: var(--surface);
-        border: none;
-        border-radius: 20px;
-        padding: 8px 14px;
-        font-size: 13px;
-        color: var(--accent-dark);
-        cursor: pointer;
-        font-weight: 500;
-      }
-      .cal-preset:active {
-        background: var(--surface-hover);
-      }
-      .cal-nav {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 12px;
-      }
-      .cal-nav-btn {
-        background: var(--surface);
-        border: none;
-        border-radius: 50%;
-        width: 34px;
-        height: 34px;
-        font-size: 16px;
-        color: var(--text);
-        cursor: pointer;
-      }
-      .cal-month-label {
-        font-size: 15px;
-        font-weight: 600;
-      }
-      .cal-weekdays {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        text-align: center;
-        font-size: 11px;
-        color: var(--text-muted);
-        margin-bottom: 4px;
-        text-transform: uppercase;
-      }
-      .cal-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 2px;
-      }
-      .cal-day {
-        aspect-ratio: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        border: none;
-        background: none;
-        color: var(--text);
-        cursor: pointer;
-        border-radius: 50%;
-        position: relative;
-      }
-      .cal-day.empty {
-        cursor: default;
-      }
-      .cal-day.in-range {
-        background: #eef0fd;
-        border-radius: 0;
-      }
-      .cal-day.in-range.range-start {
-        border-radius: 50% 0 0 50%;
-      }
-      .cal-day.in-range.range-end {
-        border-radius: 0 50% 50% 0;
-      }
-      .cal-day.range-start .cal-day-num,
-      .cal-day.range-end .cal-day-num {
-        background: var(--accent);
-        color: white;
-        border-radius: 50%;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .cal-day-num {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-      }
-      .cal-day.today .cal-day-num {
-        font-weight: 700;
-        color: var(--accent);
-      }
-      .cal-summary {
-        text-align: center;
-        font-size: 13px;
-        color: var(--text-muted);
-        margin: 14px 0 10px;
-      }
-      .cal-summary strong {
-        color: var(--text);
-      }
-      .cal-actions {
-        display: flex;
-        gap: 10px;
-      }
-      .cal-actions button {
-        flex: 1;
-        padding: 12px;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .cal-cancel {
-        background: var(--surface);
-        border: none;
-        color: var(--text-muted);
-      }
-      .cal-apply {
-        background: linear-gradient(135deg, var(--accent), var(--accent2));
-        border: none;
-        color: white;
-      }
-      .cal-apply:disabled {
-        background: var(--disabled);
-      }
-
-      .hidden {
-        display: none !important;
-      }
-
-      /* collapsed summary panel */
-      #summary-panel {
-        background: var(--card);
-        border-radius: 16px;
-        padding: 16px;
-        box-shadow: 0 8px 24px rgba(35, 30, 90, 0.08);
-      }
-      .summary-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 12px;
-      }
-      .summary-title {
-        font-size: 15px;
-        font-weight: 600;
-        margin: 0;
-      }
-      .edit-btn {
-        background: var(--surface);
-        border: none;
-        border-radius: 20px;
-        padding: 7px 14px;
-        font-size: 13px;
-        font-weight: 500;
-        color: var(--accent-dark);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-      }
-      #summary-list {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin-bottom: 14px;
-      }
-      .summary-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: var(--surface);
-        border-radius: 10px;
-        padding: 10px 12px;
-      }
-      .summary-pin {
-        font-size: 16px;
-        flex-shrink: 0;
-      }
-      .summary-loc {
-        font-size: 14px;
-        font-weight: 600;
-        margin: 0;
-      }
-      .summary-dates {
-        font-size: 12px;
-        color: var(--text-muted);
-        margin: 2px 0 0;
-      }
-
-      /* location autocomplete */
-      .loc-wrap {
-        position: relative;
-      }
-      .loc-suggestions {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        margin-top: 4px;
-        max-height: 220px;
-        overflow-y: auto;
-        z-index: 20;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        display: none;
-      }
-      .loc-suggestions.open {
-        display: block;
-      }
-      .loc-suggestion {
-        padding: 10px 12px;
-        font-size: 14px;
-        cursor: pointer;
-        border-bottom: 1px solid var(--border);
-      }
-      .loc-suggestion:last-child {
-        border-bottom: none;
-      }
-      .loc-suggestion:active {
-        background: var(--surface);
-      }
-      .loc-suggestion .sub {
-        font-size: 12px;
-        color: var(--text-muted);
-        margin-top: 1px;
-      }
-
-      /* footer */
-      .app-footer {
-        max-width: 680px;
-        margin: 36px auto 0;
-        padding: 0 16px;
-        text-align: center;
-      }
-      .app-footer .sources-label {
-        font-size: 11px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-        margin: 0 0 10px;
-      }
-      .source-badges {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 10px;
-      }
-      .source-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 7px 12px;
-        font-size: 12px;
-        color: var(--text-muted);
-        text-decoration: none;
-      }
-      .source-badge svg {
-        flex-shrink: 0;
-      }
-      .source-badge span.name {
-        color: var(--text);
-        font-weight: 600;
-      }
-
-      /* hourly chart in drawer */
-      .drawer-hourly-title {
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--text-muted);
-        margin: 0 0 8px;
-      }
-      .drawer-chart-wrap {
-        position: relative;
-        height: 170px;
-        margin-bottom: 18px;
+      @keyframes fade-up {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fade-up {
+        animation: fade-up 0.35s ease-out both;
       }
     </style>
   </head>
-  <body>
-    <div class="hero">
-      <h1>Reporte del clima</h1>
-      <p>Agrega uno o mas lugares con su rango de fechas y genera el reporte</p>
+  <body class="bg-slate-50 font-sans text-slate-900 antialiased pb-16">
+    <div
+      class="relative overflow-hidden bg-gradient-to-br from-indigo-600 to-cyan-500 px-4 pt-10 pb-16 text-center text-white"
+    >
+      <div
+        class="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl"
+      ></div>
+      <div
+        class="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-white/10 blur-2xl"
+      ></div>
+      <h1 class="relative text-2xl font-extrabold tracking-tight sm:text-3xl">
+        Reporte del clima
+      </h1>
+      <p class="relative mx-auto mt-2 max-w-sm text-sm text-indigo-100">
+        Agrega uno o mas lugares con su rango de fechas y genera el reporte
+      </p>
     </div>
 
-    <div class="wrap">
-      <div id="summary-panel" class="hidden">
-        <div class="summary-head">
-          <p class="summary-title">Tus lugares y fechas</p>
-          <button type="button" class="edit-btn" id="edit-btn">
+    <div class="mx-auto -mt-8 max-w-2xl px-4">
+      <div
+        id="summary-panel"
+        class="hidden animate-fade-up rounded-2xl bg-white p-4 shadow-xl shadow-slate-200/70"
+      >
+        <div class="mb-3 flex items-center justify-between">
+          <p class="text-base font-semibold">Tus lugares y fechas</p>
+          <button
+            type="button"
+            id="edit-btn"
+            class="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-indigo-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          >
             <span>&#9998;</span> Editar
           </button>
         </div>
-        <div id="summary-list"></div>
-        <button type="button" class="submit" id="summary-generate">
+        <div id="summary-list" class="mb-4 flex flex-col gap-2.5"></div>
+        <button
+          type="button"
+          id="summary-generate"
+          class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:brightness-105 active:scale-[0.98] disabled:cursor-default disabled:opacity-60"
+        >
           Actualizar reporte
         </button>
       </div>
 
-      <form id="weather-form">
-        <div id="rows"></div>
-        <button type="button" class="add-btn" id="add-row">
+      <form
+        id="weather-form"
+        class="animate-fade-up rounded-2xl bg-white p-4 shadow-xl shadow-slate-200/70"
+      >
+        <div id="rows" class="mb-3 flex flex-col gap-3"></div>
+        <button
+          type="button"
+          id="add-row"
+          class="mb-3 w-full rounded-lg border border-dashed border-indigo-200 bg-white px-3 py-3 text-sm font-medium text-indigo-600 transition hover:bg-indigo-50 active:scale-[0.99]"
+        >
           + Agregar lugar
         </button>
-        <button type="submit" class="submit" id="submit-btn">
-          Generar reporte
+        <button
+          type="submit"
+          id="submit-btn"
+          class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:brightness-105 active:scale-[0.98] disabled:cursor-default disabled:from-slate-300 disabled:to-slate-300 disabled:shadow-none"
+        >
+          <span id="submit-btn-text">Generar reporte</span>
+          <svg
+            id="submit-spinner"
+            class="hidden h-4 w-4 animate-spin"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            ></path>
+          </svg>
         </button>
-        <div id="status"></div>
+        <div
+          id="status"
+          class="mt-2 min-h-[18px] text-center text-xs text-slate-500"
+        ></div>
       </form>
 
-      <div id="report"></div>
+      <div id="report" class="mt-6"></div>
     </div>
 
-    <div class="app-footer">
-      <p class="sources-label">Fuentes de datos</p>
-      <div class="source-badges">
+    <div class="mx-auto mt-10 max-w-2xl px-4 text-center">
+      <p
+        class="mb-2.5 text-[11px] font-medium uppercase tracking-wide text-slate-400"
+      >
+        Fuentes de datos
+      </p>
+      <div class="flex flex-wrap justify-center gap-2.5">
         <a
-          class="source-badge"
+          class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-500 transition hover:border-indigo-200 hover:shadow-sm"
           href="https://open-meteo.com"
           target="_blank"
           rel="noopener"
@@ -742,10 +157,11 @@
               stroke-linejoin="round"
             />
           </svg>
-          <span class="name">Open-Meteo</span> &middot; clima y geocodificacion
+          <span class="font-semibold text-slate-700">Open-Meteo</span>
+          &middot; clima y geocodificacion
         </a>
         <a
-          class="source-badge"
+          class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-500 transition hover:border-indigo-200 hover:shadow-sm"
           href="https://www.chartjs.org"
           target="_blank"
           rel="noopener"
@@ -764,83 +180,126 @@
               stroke-linecap="round"
             />
           </svg>
-          <span class="name">Chart.js</span> &middot; graficos
+          <span class="font-semibold text-slate-700">Chart.js</span>
+          &middot; graficos
         </a>
       </div>
     </div>
 
     <!-- day detail drawer -->
-    <div class="overlay" id="overlay">
-      <div class="drawer" id="drawer">
-        <div class="drawer-handle"></div>
-        <div class="drawer-head">
-          <div style="display: flex; align-items: center; gap: 12px">
-            <span class="drawer-icon" id="drawer-icon"></span>
+    <div
+      id="overlay"
+      class="fixed inset-0 z-[100] flex invisible items-end justify-center bg-slate-900/50 opacity-0 backdrop-blur-sm transition-opacity duration-300"
+    >
+      <div
+        id="drawer"
+        class="w-full max-w-2xl translate-y-full max-h-[88vh] overflow-y-auto rounded-t-3xl bg-white p-5 pb-6 shadow-2xl transition-transform duration-300 ease-out"
+      >
+        <div class="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-200"></div>
+        <div class="mb-1 flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <span id="drawer-icon" class="text-4xl leading-none"></span>
             <div>
-              <p class="drawer-title" id="drawer-title"></p>
-              <p class="drawer-sub" id="drawer-sub" style="margin: 0"></p>
+              <p id="drawer-title" class="text-lg font-bold"></p>
+              <p id="drawer-sub" class="text-sm text-slate-500"></p>
             </div>
           </div>
-          <button class="drawer-close" id="drawer-close" aria-label="Cerrar">
+          <button
+            id="drawer-close"
+            class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            aria-label="Cerrar"
+          >
             &times;
           </button>
         </div>
-        <div class="drawer-stats" id="drawer-stats"></div>
-        <p class="drawer-hourly-title">Por hora</p>
-        <div class="drawer-chart-wrap">
+        <div id="drawer-stats" class="mb-4 mt-4 grid grid-cols-2 gap-2.5"></div>
+        <p
+          class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400"
+        >
+          Por hora
+        </p>
+        <div class="relative mb-4 h-[170px]">
           <canvas
             id="drawer-chart"
             role="img"
             aria-label="Temperatura y probabilidad de lluvia por hora"
           ></canvas>
         </div>
-        <div class="reco-box">
-          <p class="reco-title">Recomendacion del dia</p>
-          <p id="drawer-reco" style="margin: 0"></p>
+        <div
+          class="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-sm leading-relaxed text-emerald-900"
+        >
+          <p
+            class="mb-1.5 text-xs font-bold uppercase tracking-wide text-emerald-600"
+          >
+            Recomendacion del dia
+          </p>
+          <p id="drawer-reco" class="m-0"></p>
         </div>
       </div>
     </div>
 
     <!-- calendar date-range drawer -->
-    <div class="overlay" id="cal-overlay">
-      <div class="drawer" id="cal-drawer">
-        <div class="drawer-handle"></div>
-        <div class="drawer-head">
-          <p class="drawer-title">Elige las fechas</p>
-          <button class="drawer-close" id="cal-close" aria-label="Cerrar">
+    <div
+      id="cal-overlay"
+      class="fixed inset-0 z-[100] flex invisible items-end justify-center bg-slate-900/50 opacity-0 backdrop-blur-sm transition-opacity duration-300"
+    >
+      <div
+        id="cal-drawer"
+        class="w-full max-w-2xl translate-y-full max-h-[88vh] overflow-y-auto rounded-t-3xl bg-white p-5 pb-6 shadow-2xl transition-transform duration-300 ease-out"
+      >
+        <div class="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-200"></div>
+        <div class="mb-4 flex items-center justify-between">
+          <p class="text-lg font-bold">Elige las fechas</p>
+          <button
+            id="cal-close"
+            class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            aria-label="Cerrar"
+          >
             &times;
           </button>
         </div>
-        <div class="cal-presets" id="cal-presets"></div>
-        <div class="cal-nav">
+        <div id="cal-presets" class="mb-4 flex flex-wrap gap-2"></div>
+        <div class="mb-3 flex items-center justify-between">
           <button
             type="button"
-            class="cal-nav-btn"
             id="cal-prev"
+            class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
             aria-label="Mes anterior"
           >
             &lsaquo;
           </button>
-          <span class="cal-month-label" id="cal-month-label"></span>
+          <span id="cal-month-label" class="text-sm font-semibold"></span>
           <button
             type="button"
-            class="cal-nav-btn"
             id="cal-next"
+            class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
             aria-label="Mes siguiente"
           >
             &rsaquo;
           </button>
         </div>
-        <div class="cal-weekdays" id="cal-weekdays"></div>
-        <div class="cal-grid" id="cal-grid"></div>
-        <p class="cal-summary" id="cal-summary">
+        <div
+          id="cal-weekdays"
+          class="mb-1 grid grid-cols-7 text-center text-[11px] font-medium uppercase text-slate-400"
+        ></div>
+        <div id="cal-grid" class="grid grid-cols-7 gap-1"></div>
+        <p id="cal-summary" class="my-4 text-center text-sm text-slate-500">
           Toca el dia de inicio y luego el de fin
         </p>
-        <div class="cal-actions">
-          <button type="button" class="cal-cancel" id="cal-cancel">
+        <div class="flex gap-2.5">
+          <button
+            type="button"
+            id="cal-cancel"
+            class="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-200"
+          >
             Cancelar
           </button>
-          <button type="button" class="cal-apply" id="cal-apply" disabled>
+          <button
+            type="button"
+            id="cal-apply"
+            disabled
+            class="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 py-3 text-sm font-semibold text-white transition disabled:from-slate-300 disabled:to-slate-300"
+          >
             Aplicar
           </button>
         </div>
@@ -848,33 +307,53 @@
     </div>
 
     <template id="row-template">
-      <div class="row-card">
+      <div
+        class="row-card relative animate-fade-up rounded-xl border border-slate-200 bg-slate-50 p-4"
+      >
         <button
           type="button"
-          class="remove-btn"
+          class="remove-btn absolute right-2.5 top-2.5 rounded-full p-1.5 text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           title="Quitar"
           aria-label="Quitar lugar"
         >
-          &times;
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          >
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
         </button>
-        <div class="field">
-          <label>Lugar</label>
-          <div class="loc-wrap">
+        <div class="mb-2.5">
+          <label class="mb-1 block text-xs font-medium text-slate-500"
+            >Lugar</label
+          >
+          <div class="loc-wrap relative">
             <input
               type="text"
-              class="loc-input"
+              class="loc-input w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               placeholder="Ej: Niagara Falls, NY"
               autocomplete="off"
               required
             />
-            <div class="loc-suggestions"></div>
+            <div
+              class="loc-suggestions absolute left-0 right-0 top-full z-20 mt-1 hidden max-h-56 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg"
+            ></div>
           </div>
         </div>
-        <div class="field">
-          <label>Fechas</label>
-          <button type="button" class="date-range-btn placeholder">
-            <span class="cal-emoji">&#128197;</span>
-            <span class="date-range-text">Selecciona fechas</span>
+        <div>
+          <label class="mb-1 block text-xs font-medium text-slate-500"
+            >Fechas</label
+          >
+          <button
+            type="button"
+            class="date-range-btn flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left text-[15px] text-slate-400 transition hover:border-indigo-300"
+          >
+            <span class="cal-emoji flex-shrink-0 text-base">&#128197;</span>
+            <span class="date-range-text"></span>
           </button>
           <input type="hidden" class="start-input" />
           <input type="hidden" class="end-input" />
@@ -890,7 +369,10 @@
       const statusEl = document.getElementById("status");
       const reportEl = document.getElementById("report");
       const submitBtn = document.getElementById("submit-btn");
+      const submitBtnText = document.getElementById("submit-btn-text");
+      const submitSpinner = document.getElementById("submit-spinner");
       const overlay = document.getElementById("overlay");
+      const drawerPanel = document.getElementById("drawer");
       const drawerClose = document.getElementById("drawer-close");
 
       const summaryPanel = document.getElementById("summary-panel");
@@ -899,6 +381,7 @@
       const summaryGenerateBtn = document.getElementById("summary-generate");
 
       const calOverlay = document.getElementById("cal-overlay");
+      const calDrawerPanel = document.getElementById("cal-drawer");
       const calClose = document.getElementById("cal-close");
       const calCancel = document.getElementById("cal-cancel");
       const calApply = document.getElementById("cal-apply");
@@ -933,6 +416,24 @@
       let calViewDate = new Date();
       let calStart = null;
       let calEnd = null;
+
+      // ---------- overlay helpers ----------
+
+      function showOverlay(overlayEl, panelEl) {
+        overlayEl.classList.remove("opacity-0", "invisible");
+        panelEl.classList.remove("translate-y-full");
+      }
+
+      function hideOverlay(overlayEl, panelEl) {
+        panelEl.classList.add("translate-y-full");
+        overlayEl.classList.add("opacity-0", "invisible");
+      }
+
+      function setStatus(msg, isError) {
+        statusEl.textContent = msg;
+        statusEl.classList.toggle("text-red-600", !!isError);
+        statusEl.classList.toggle("text-slate-500", !isError);
+      }
 
       function setCookie(name, value, days) {
         const expires = new Date(Date.now() + days * 864e5).toUTCString();
@@ -1014,7 +515,8 @@
         const startVal = card.querySelector(".start-input").value;
         const endVal = card.querySelector(".end-input").value;
         if (startVal && endVal) {
-          btn.classList.remove("placeholder");
+          btn.classList.remove("text-slate-400");
+          btn.classList.add("text-slate-900");
           if (startVal === endVal) {
             text.textContent = formatShort(parseISO(startVal));
           } else {
@@ -1024,7 +526,8 @@
               formatShort(parseISO(endVal));
           }
         } else {
-          btn.classList.add("placeholder");
+          btn.classList.add("text-slate-400");
+          btn.classList.remove("text-slate-900");
           text.textContent = "Selecciona fechas";
         }
       }
@@ -1068,7 +571,7 @@
         let currentResults = [];
 
         function closeBox() {
-          box.classList.remove("open");
+          box.classList.add("hidden");
         }
 
         function renderResults(results) {
@@ -1082,16 +585,20 @@
             .map((r) => {
               const sub = [r.admin1, r.country].filter(Boolean).join(", ");
               return (
-                '<div class="loc-suggestion">' +
+                '<div class="loc-suggestion cursor-pointer border-b border-slate-100 px-3 py-2.5 text-sm text-slate-700 transition last:border-b-0 hover:bg-indigo-50">' +
                 "<div>" +
                 escapeHtml(r.name) +
                 "</div>" +
-                (sub ? '<div class="sub">' + escapeHtml(sub) + "</div>" : "") +
+                (sub
+                  ? '<div class="mt-0.5 text-xs text-slate-400">' +
+                    escapeHtml(sub) +
+                    "</div>"
+                  : "") +
                 "</div>"
               );
             })
             .join("");
-          box.classList.add("open");
+          box.classList.remove("hidden");
           Array.from(box.children).forEach((el, idx) => {
             el.addEventListener("mousedown", (e) => {
               e.preventDefault();
@@ -1114,7 +621,7 @@
         });
 
         locInput.addEventListener("focus", () => {
-          if (currentResults.length > 0) box.classList.add("open");
+          if (currentResults.length > 0) box.classList.remove("hidden");
         });
 
         locInput.addEventListener("blur", () => {
@@ -1199,11 +706,11 @@
         summaryList.innerHTML = items
           .map(
             (item) =>
-              '<div class="summary-row">' +
-              '<span class="summary-pin">&#128205;</span>' +
-              '<div><p class="summary-loc">' +
+              '<div class="flex items-center gap-2.5 rounded-xl bg-slate-50 p-3">' +
+              '<span class="text-base">&#128205;</span>' +
+              '<div><p class="text-sm font-semibold">' +
               item.loc +
-              '</p><p class="summary-dates">' +
+              '</p><p class="mt-0.5 text-xs text-slate-500">' +
               item.dates +
               "</p></div>" +
               "</div>",
@@ -1250,7 +757,8 @@
         presets.forEach((p) => {
           const btn = document.createElement("button");
           btn.type = "button";
-          btn.className = "cal-preset";
+          btn.className =
+            "rounded-full bg-slate-100 px-3.5 py-2 text-xs font-medium text-indigo-700 transition hover:bg-slate-200 active:scale-95";
           btn.textContent = p.label;
           btn.addEventListener("click", () => {
             calStart = p.start();
@@ -1278,11 +786,11 @@
         calEnd = endVal ? parseISO(endVal) : null;
         calViewDate = calStart ? new Date(calStart) : new Date();
         renderCalendar();
-        calOverlay.classList.add("open");
+        showOverlay(calOverlay, calDrawerPanel);
       }
 
       function closeCalendar() {
-        calOverlay.classList.remove("open");
+        hideOverlay(calOverlay, calDrawerPanel);
       }
 
       function renderCalendar() {
@@ -1302,27 +810,57 @@
         calGridEl.innerHTML = "";
         for (let i = 0; i < startOffset; i++) {
           const empty = document.createElement("div");
-          empty.className = "cal-day empty";
+          empty.className = "aspect-square";
           calGridEl.appendChild(empty);
         }
 
         for (let d = 1; d <= daysInMonth; d++) {
           const date = new Date(year, month, d);
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "cal-day";
-          if (sameDay(date, today)) btn.classList.add("today");
-
+          const isToday = sameDay(date, today);
           const inRange =
             calStart && calEnd && date >= calStart && date <= calEnd;
           const isStart = calStart && sameDay(date, calStart);
           const isEnd = calEnd && sameDay(date, calEnd);
-          if (inRange) btn.classList.add("in-range");
-          if (isStart) btn.classList.add("range-start");
-          if (isEnd) btn.classList.add("range-end");
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          const outerClasses = [
+            "relative",
+            "aspect-square",
+            "flex",
+            "items-center",
+            "justify-center",
+            "cursor-pointer",
+            "transition-colors",
+          ];
+          if (inRange) {
+            outerClasses.push("bg-indigo-50");
+            outerClasses.push(isStart ? "rounded-l-full" : "rounded-l-none");
+            outerClasses.push(isEnd ? "rounded-r-full" : "rounded-r-none");
+            if (!isStart && !isEnd) outerClasses.push("hover:bg-indigo-100");
+          } else {
+            outerClasses.push("rounded-full", "hover:bg-slate-100");
+          }
+          btn.className = outerClasses.join(" ");
 
           const num = document.createElement("span");
-          num.className = "cal-day-num";
+          const numClasses = [
+            "flex",
+            "h-full",
+            "w-full",
+            "items-center",
+            "justify-center",
+            "rounded-full",
+            "text-sm",
+          ];
+          if (isStart || isEnd) {
+            numClasses.push("bg-indigo-600", "font-semibold", "text-white");
+          } else if (isToday) {
+            numClasses.push("font-bold", "text-indigo-600");
+          } else {
+            numClasses.push("text-slate-700");
+          }
+          num.className = numClasses.join(" ");
           num.textContent = d;
           btn.appendChild(num);
 
@@ -1332,15 +870,15 @@
 
         if (calStart && calEnd) {
           calSummaryEl.innerHTML =
-            "<strong>" +
+            '<strong class="text-slate-900">' +
             formatShort(calStart) +
-            "</strong> a <strong>" +
+            '</strong> a <strong class="text-slate-900">' +
             formatShort(calEnd) +
             "</strong>";
           calApply.disabled = false;
         } else if (calStart) {
           calSummaryEl.innerHTML =
-            "Inicio: <strong>" +
+            'Inicio: <strong class="text-slate-900">' +
             formatShort(calStart) +
             "</strong>. Toca el dia de fin.";
           calApply.disabled = true;
@@ -1400,10 +938,10 @@
       // ---------- weather icon + recommendation ----------
 
       function weatherIcon(prob) {
-        if (prob >= 70) return "\u26c8\ufe0f";
-        if (prob >= 40) return "\ud83c\udf27\ufe0f";
-        if (prob >= 15) return "\u26c5";
-        return "\u2600\ufe0f";
+        if (prob >= 70) return "⛈️";
+        if (prob >= 40) return "🌧️";
+        if (prob >= 15) return "⛅";
+        return "☀️";
       }
 
       function buildRecommendation(day) {
@@ -1597,23 +1135,35 @@
             scales: {
               y: {
                 position: "left",
-                ticks: { font: { size: 9 } },
-                grid: { color: "rgba(0,0,0,0.05)" },
+                ticks: { font: { size: 9 }, color: "#64748b" },
+                grid: { color: "rgba(15, 23, 42, 0.06)" },
               },
               y1: {
                 position: "right",
                 min: 0,
                 max: 100,
-                ticks: { font: { size: 9 } },
+                ticks: { font: { size: 9 }, color: "#64748b" },
                 grid: { display: false },
               },
               x: {
-                ticks: { font: { size: 9 }, maxTicksLimit: 8 },
+                ticks: { font: { size: 9 }, color: "#64748b", maxTicksLimit: 8 },
                 grid: { display: false },
               },
             },
           },
         });
+      }
+
+      function statCard(label, value) {
+        return (
+          '<div class="rounded-xl bg-slate-50 p-3">' +
+          '<p class="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">' +
+          label +
+          "</p>" +
+          '<p class="text-lg font-bold text-slate-900">' +
+          value +
+          "</p></div>"
+        );
       }
 
       function openDrawer(blockIdx, dayIdx) {
@@ -1631,39 +1181,23 @@
           block.place.name +
           (block.place.admin1 ? ", " + block.place.admin1 : "");
         document.getElementById("drawer-stats").innerHTML =
-          '<div class="drawer-stat"><p class="k">Maxima</p><p class="v">' +
-          day.max +
-          "&deg;C</p></div>" +
-          '<div class="drawer-stat"><p class="k">Minima</p><p class="v">' +
-          day.min +
-          "&deg;C</p></div>" +
-          '<div class="drawer-stat"><p class="k">Sensacion max.</p><p class="v">' +
-          day.feelsMax +
-          "&deg;C</p></div>" +
-          '<div class="drawer-stat"><p class="k">Sensacion min.</p><p class="v">' +
-          day.feelsMin +
-          "&deg;C</p></div>" +
-          '<div class="drawer-stat"><p class="k">Prob. lluvia</p><p class="v">' +
-          day.prob +
-          "%</p></div>" +
-          '<div class="drawer-stat"><p class="k">Precipitacion</p><p class="v">' +
-          day.mm +
-          " mm</p></div>" +
-          '<div class="drawer-stat"><p class="k">Viento max.</p><p class="v">' +
-          day.wind +
-          " km/h</p></div>" +
-          '<div class="drawer-stat"><p class="k">Indice UV</p><p class="v">' +
-          day.uv +
-          "</p></div>";
+          statCard("Maxima", day.max + "&deg;C") +
+          statCard("Minima", day.min + "&deg;C") +
+          statCard("Sensacion max.", day.feelsMax + "&deg;C") +
+          statCard("Sensacion min.", day.feelsMin + "&deg;C") +
+          statCard("Prob. lluvia", day.prob + "%") +
+          statCard("Precipitacion", day.mm + " mm") +
+          statCard("Viento max.", day.wind + " km/h") +
+          statCard("Indice UV", day.uv);
         document.getElementById("drawer-reco").textContent = reco;
 
         renderDrawerChart(block.hourly, day.date);
 
-        overlay.classList.add("open");
+        showOverlay(overlay, drawerPanel);
       }
 
       function closeDrawer() {
-        overlay.classList.remove("open");
+        hideOverlay(overlay, drawerPanel);
       }
 
       drawerClose.addEventListener("click", closeDrawer);
@@ -1677,7 +1211,28 @@
         openDrawer(Number(tr.dataset.block), Number(tr.dataset.day));
       });
 
-      function renderBlock(entry, place, forecast, index) {
+      // ---------- report rendering ----------
+
+      function skeletonBlock() {
+        const div = document.createElement("div");
+        div.className =
+          "loc-block mb-5 animate-pulse rounded-2xl bg-white p-4 shadow-xl shadow-slate-200/70";
+        div.innerHTML =
+          '<div class="mb-4 flex items-center gap-3">' +
+          '<div class="h-9 w-9 rounded-full bg-slate-200"></div>' +
+          '<div class="h-4 w-40 rounded bg-slate-200"></div>' +
+          "</div>" +
+          '<div class="mb-4 grid grid-cols-2 gap-2.5">' +
+          '<div class="h-14 rounded-xl bg-slate-100"></div>' +
+          '<div class="h-14 rounded-xl bg-slate-100"></div>' +
+          '<div class="h-14 rounded-xl bg-slate-100"></div>' +
+          '<div class="h-14 rounded-xl bg-slate-100"></div>' +
+          "</div>" +
+          '<div class="h-[200px] rounded-xl bg-slate-100"></div>';
+        return div;
+      }
+
+      function buildBlock(entry, place, forecast, index) {
         const daily = forecast.daily;
         const stats = computeStats(daily);
         const labels = daily.time.map(formatDate);
@@ -1695,23 +1250,23 @@
             index +
             '" data-day="' +
             i +
-            '">' +
-            '<td class="day">' +
+            '" class="cursor-pointer border-b border-slate-100 text-sm transition-colors last:border-b-0 hover:bg-slate-50">' +
+            '<td class="px-1.5 py-2.5 text-left font-medium">' +
             formatDate(day.date) +
             "</td>" +
-            '<td class="icon">' +
+            '<td class="px-1.5 py-2.5 text-center text-base">' +
             weatherIcon(day.prob) +
             "</td>" +
-            "<td>" +
+            '<td class="px-1.5 py-2.5 text-center">' +
             day.max +
             "&deg;</td>" +
-            "<td>" +
+            '<td class="px-1.5 py-2.5 text-center">' +
             day.min +
             "&deg;</td>" +
-            '<td class="rain">' +
+            '<td class="px-1.5 py-2.5 text-center text-blue-600">' +
             day.prob +
             "%</td>" +
-            '<td class="rain">' +
+            '<td class="px-1.5 py-2.5 text-center text-blue-600">' +
             day.mm +
             " mm</td>" +
             "</tr>";
@@ -1719,14 +1274,15 @@
 
         const canvasId = "chart-" + index;
         const block = document.createElement("div");
-        block.className = "loc-block";
+        block.className =
+          "loc-block mb-5 animate-fade-up rounded-2xl bg-white p-4 shadow-xl shadow-slate-200/70";
         block.innerHTML =
-          '<div class="loc-head">' +
-          '<span class="loc-icon">' +
+          '<div class="mb-1 flex items-center gap-3">' +
+          '<span class="text-3xl leading-none">' +
           overallIcon +
           "</span>" +
           "<div>" +
-          '<p class="location-title">' +
+          '<p class="text-lg font-bold">' +
           place.name +
           (place.admin1 ? ", " + place.admin1 : "") +
           ", " +
@@ -1734,40 +1290,40 @@
           "</p>" +
           "</div>" +
           "</div>" +
-          '<p class="location-sub">' +
+          '<p class="mb-4 text-sm text-slate-500">' +
           formatDate(entry.start) +
           " - " +
           formatDate(entry.end) +
           "</p>" +
-          '<div class="stats-grid">' +
-          '<div class="stat-card"><p class="stat-label">Prom. maxima</p><p class="stat-value warm">' +
+          '<div class="mb-4 grid grid-cols-2 gap-2.5">' +
+          '<div class="rounded-xl bg-slate-50 p-3"><p class="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">Prom. maxima</p><p class="text-lg font-bold text-amber-500">' +
           stats.avgMax +
           "&deg;C</p></div>" +
-          '<div class="stat-card"><p class="stat-label">Prom. minima</p><p class="stat-value cold">' +
+          '<div class="rounded-xl bg-slate-50 p-3"><p class="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">Prom. minima</p><p class="text-lg font-bold text-indigo-600">' +
           stats.avgMin +
           "&deg;C</p></div>" +
-          '<div class="stat-card"><p class="stat-label">Precip. total</p><p class="stat-value rain">' +
+          '<div class="rounded-xl bg-slate-50 p-3"><p class="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">Precip. total</p><p class="text-lg font-bold text-blue-600">' +
           stats.totalMm +
           " mm</p></div>" +
-          '<div class="stat-card"><p class="stat-label">Dias con lluvia</p><p class="stat-value rain">' +
+          '<div class="rounded-xl bg-slate-50 p-3"><p class="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">Dias con lluvia</p><p class="text-lg font-bold text-blue-600">' +
           stats.rainyDays +
           " de " +
           daily.time.length +
           "</p></div>" +
           "</div>" +
-          '<div class="chart-wrap"><canvas id="' +
+          '<div class="chart-wrap relative mb-2 h-[200px]"><canvas id="' +
           canvasId +
           '" role="img" aria-label="Grafico de temperaturas y probabilidad de lluvia"></canvas></div>' +
-          "<table>" +
-          "<thead><tr><th>Dia</th><th></th><th>Max</th><th>Min</th><th>Lluvia</th><th>Precip.</th></tr></thead>" +
+          '<div class="chart-legend mb-4 flex flex-wrap justify-center gap-3.5 text-[11px] text-slate-500"></div>' +
+          '<table class="w-full border-collapse">' +
+          '<thead><tr class="border-b border-slate-200 text-[11px] font-medium uppercase text-slate-400"><th class="px-1.5 py-2 font-medium">Dia</th><th class="px-1.5 py-2 font-medium"></th><th class="px-1.5 py-2 font-medium">Max</th><th class="px-1.5 py-2 font-medium">Min</th><th class="px-1.5 py-2 font-medium">Lluvia</th><th class="px-1.5 py-2 font-medium">Precip.</th></tr></thead>' +
           "<tbody>" +
           rows +
           "</tbody>" +
           "</table>" +
-          '<p class="row-hint">Toca un dia para ver el detalle</p>';
-        reportEl.appendChild(block);
+          '<p class="mt-2 text-center text-[11px] text-slate-400">Toca un dia para ver el detalle</p>';
 
-        const ctx = document.getElementById(canvasId);
+        const ctx = block.querySelector("#" + canvasId);
         const chart = new Chart(ctx, {
           data: {
             labels: labels,
@@ -1815,20 +1371,20 @@
             scales: {
               y: {
                 position: "left",
-                title: { display: true, text: "\u00b0C", font: { size: 10 } },
-                ticks: { font: { size: 10 } },
-                grid: { color: "rgba(0,0,0,0.05)" },
+                title: { display: true, text: "°C", font: { size: 10 } },
+                ticks: { font: { size: 10 }, color: "#64748b" },
+                grid: { color: "rgba(15, 23, 42, 0.06)" },
               },
               y1: {
                 position: "right",
                 min: 0,
                 max: 100,
                 title: { display: true, text: "% lluvia", font: { size: 10 } },
-                ticks: { font: { size: 10 } },
+                ticks: { font: { size: 10 }, color: "#64748b" },
                 grid: { display: false },
               },
               x: {
-                ticks: { font: { size: 10 } },
+                ticks: { font: { size: 10 }, color: "#64748b" },
                 grid: { display: false },
               },
             },
@@ -1836,29 +1392,26 @@
         });
         chartInstances.push(chart);
 
-        const legend = document.createElement("div");
-        legend.style.cssText =
-          "display:flex;flex-wrap:wrap;gap:14px;margin:-10px 0 16px;font-size:11px;color:var(--text-muted);justify-content:center;";
-        legend.innerHTML =
-          '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#f59e0b;margin-right:4px;"></span>Maxima</span>' +
-          '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#4f46e5;margin-right:4px;"></span>Minima</span>' +
-          '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:rgba(59,130,246,0.5);margin-right:4px;"></span>Prob. lluvia</span>';
-        block
-          .querySelector(".chart-wrap")
-          .insertAdjacentElement("afterend", legend);
+        block.querySelector(".chart-legend").innerHTML =
+          '<span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm bg-amber-500"></span>Maxima</span>' +
+          '<span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm bg-indigo-600"></span>Minima</span>' +
+          '<span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm bg-blue-500/50"></span>Prob. lluvia</span>';
+
+        return block;
       }
 
-      function renderErrorBlock(entry, message) {
+      function buildErrorBlock(entry, message) {
         const block = document.createElement("div");
-        block.className = "loc-block";
+        block.className =
+          "loc-block mb-5 animate-fade-up rounded-2xl bg-white p-4 shadow-xl shadow-slate-200/70";
         block.innerHTML =
-          '<p class="location-title">' +
+          '<p class="text-lg font-bold">' +
           entry.location +
           "</p>" +
-          '<p class="location-sub error">' +
+          '<p class="mt-1 text-sm text-red-600">' +
           message +
           "</p>";
-        reportEl.appendChild(block);
+        return block;
       }
 
       function collectEntries() {
@@ -1876,8 +1429,7 @@
         if (e) e.preventDefault();
         const entries = collectEntries();
         if (entries.length === 0) {
-          statusEl.textContent = "Agrega al menos un lugar con sus fechas.";
-          statusEl.classList.add("error");
+          setStatus("Agrega al menos un lugar con sus fechas.", true);
           return;
         }
 
@@ -1888,11 +1440,13 @@
 
         setCookie("wr_entries", JSON.stringify(entries), 365);
 
-        statusEl.textContent = "Generando reporte...";
-        statusEl.classList.remove("error");
+        setStatus("Generando reporte...", false);
         submitBtn.disabled = true;
         summaryGenerateBtn.disabled = true;
-        reportEl.innerHTML = "";
+        submitBtnText.textContent = "Generando...";
+        submitSpinner.classList.remove("hidden");
+        summaryGenerateBtn.textContent = "Generando...";
+
         chartInstances.forEach((c) => c.destroy());
         chartInstances.length = 0;
         if (drawerChartInstance) {
@@ -1902,8 +1456,12 @@
         blocksData = [];
         closeDrawer();
 
+        reportEl.innerHTML = "";
+        entries.forEach(() => reportEl.appendChild(skeletonBlock()));
+
         let i = 0;
         for (const entry of entries) {
+          const placeholder = reportEl.children[i];
           try {
             const geo = await geocode(entry.location);
             const forecast = await fetchForecast(
@@ -1912,16 +1470,21 @@
               entry.start,
               entry.end,
             );
-            renderBlock(entry, geo, forecast, i);
+            placeholder.replaceWith(buildBlock(entry, geo, forecast, i));
           } catch (err) {
-            renderErrorBlock(entry, err.message || "Ocurrio un error.");
+            placeholder.replaceWith(
+              buildErrorBlock(entry, err.message || "Ocurrio un error."),
+            );
           }
           i++;
         }
 
-        statusEl.textContent = "";
+        setStatus("", false);
         submitBtn.disabled = false;
         summaryGenerateBtn.disabled = false;
+        submitBtnText.textContent = "Generar reporte";
+        submitSpinner.classList.add("hidden");
+        summaryGenerateBtn.textContent = "Actualizar reporte";
         showSummary();
       }
 
