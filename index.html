@@ -1,1233 +1,1930 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reporte del clima</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<style>
-  :root {
-    --bg: #eef1f6;
-    --card: #ffffff;
-    --border: #e2e4e8;
-    --text: #16181d;
-    --text-muted: #6b7280;
-    --accent: #185fa5;
-    --accent2: #0ea5a0;
-    --accent-dark: #0c447c;
-    --rain: #378add;
-    --danger: #a32d2d;
-    --warm: #e08a2b;
-  }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    padding: 0 0 60px;
-  }
-  .hero {
-    background: linear-gradient(135deg, #185fa5 0%, #0ea5a0 100%);
-    color: white;
-    padding: 32px 16px 44px;
-    text-align: center;
-  }
-  .hero h1 { font-size: 24px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.3px; }
-  .hero p { margin: 0; font-size: 14px; opacity: 0.9; }
-  .wrap { max-width: 680px; margin: -24px auto 0; padding: 0 16px; }
-  #rows { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
-  form {
-    background: var(--card);
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 8px 24px rgba(20, 40, 70, 0.08);
-  }
-  .row-card {
-    background: #fbfcfe;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px;
-    position: relative;
-  }
-  .row-card .remove-btn {
-    position: absolute; top: 10px; right: 10px;
-    background: none; border: none; color: var(--text-muted);
-    font-size: 18px; line-height: 1; cursor: pointer; padding: 4px;
-  }
-  label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; }
-  input[type="text"] {
-    width: 100%; padding: 9px 10px; border: 1px solid var(--border);
-    border-radius: 8px; font-size: 15px; background: white;
-  }
-  .field { margin-bottom: 10px; }
-  .field:last-child { margin-bottom: 0; }
-  .date-range-btn {
-    width: 100%;
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px 12px; border: 1px solid var(--border);
-    border-radius: 8px; font-size: 15px; background: white;
-    color: var(--text); text-align: left; cursor: pointer;
-  }
-  .date-range-btn .cal-emoji { font-size: 16px; flex-shrink: 0; }
-  .date-range-btn.placeholder { color: var(--text-muted); }
-  .add-btn {
-    width: 100%; background: white; color: var(--accent);
-    border: 1px dashed #b9c6d6; padding: 11px; border-radius: 8px;
-    font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 12px;
-  }
-  button.submit {
-    width: 100%;
-    background: linear-gradient(135deg, #185fa5, #0ea5a0);
-    color: white; border: none; padding: 13px; border-radius: 10px;
-    font-size: 15px; font-weight: 600; cursor: pointer;
-  }
-  button.submit:active { filter: brightness(0.95); }
-  button.submit:disabled { background: #a9b5c0; cursor: default; }
-  #status {
-    font-size: 13px; color: var(--text-muted); margin-top: 10px;
-    min-height: 18px; text-align: center;
-  }
-  #status.error { color: var(--danger); }
-  #report { margin-top: 24px; }
-  .loc-block {
-    background: var(--card);
-    border-radius: 16px;
-    padding: 18px;
-    margin-bottom: 20px;
-    box-shadow: 0 8px 24px rgba(20, 40, 70, 0.06);
-  }
-  .loc-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
-  .loc-icon { font-size: 30px; line-height: 1; }
-  .location-title { font-size: 18px; font-weight: 700; margin: 0; }
-  .location-sub { font-size: 13px; color: var(--text-muted); margin: 0 0 16px; }
-  .location-sub.error { color: var(--danger); }
-  .stats-grid {
-    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px; margin-bottom: 18px;
-  }
-  .stat-card { background: #f4f7fb; border-radius: 10px; padding: 10px 12px; }
-  .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; margin: 0 0 3px; }
-  .stat-value { font-size: 19px; font-weight: 700; margin: 0; }
-  .stat-value.warm { color: var(--warm); }
-  .stat-value.cold { color: var(--accent); }
-  .stat-value.rain { color: var(--rain); }
-  .chart-wrap { position: relative; height: 200px; margin-bottom: 18px; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { padding: 9px 6px; text-align: center; font-size: 13px; border-bottom: 1px solid var(--border); }
-  th { font-weight: 500; color: var(--text-muted); font-size: 11px; text-transform: uppercase; }
-  tr:last-child td { border-bottom: none; }
-  td.day { text-align: left; font-weight: 500; }
-  td.icon { font-size: 17px; }
-  .rain { color: var(--rain); }
-  tbody tr { cursor: pointer; }
-  tbody tr:active { background: #f4f7fb; }
-  .row-hint { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reporte del clima</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+      :root {
+        --bg: #eef1f6;
+        --card: #ffffff;
+        --border: #e2e4e8;
+        --text: #16181d;
+        --text-muted: #6b7280;
+        --accent: #185fa5;
+        --accent2: #0ea5a0;
+        --accent-dark: #0c447c;
+        --rain: #378add;
+        --danger: #a32d2d;
+        --warm: #e08a2b;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        margin: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        padding: 0 0 60px;
+      }
+      .hero {
+        background: linear-gradient(135deg, #185fa5 0%, #0ea5a0 100%);
+        color: white;
+        padding: 32px 16px 44px;
+        text-align: center;
+      }
+      .hero h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 6px;
+        letter-spacing: -0.3px;
+      }
+      .hero p {
+        margin: 0;
+        font-size: 14px;
+        opacity: 0.9;
+      }
+      .wrap {
+        max-width: 680px;
+        margin: -24px auto 0;
+        padding: 0 16px;
+      }
+      #rows {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      form {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 8px 24px rgba(20, 40, 70, 0.08);
+      }
+      .row-card {
+        background: #fbfcfe;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        position: relative;
+      }
+      .row-card .remove-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 4px;
+      }
+      label {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: block;
+        margin-bottom: 4px;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 9px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 15px;
+        background: white;
+      }
+      .field {
+        margin-bottom: 10px;
+      }
+      .field:last-child {
+        margin-bottom: 0;
+      }
+      .date-range-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 15px;
+        background: white;
+        color: var(--text);
+        text-align: left;
+        cursor: pointer;
+      }
+      .date-range-btn .cal-emoji {
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .date-range-btn.placeholder {
+        color: var(--text-muted);
+      }
+      .add-btn {
+        width: 100%;
+        background: white;
+        color: var(--accent);
+        border: 1px dashed #b9c6d6;
+        padding: 11px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-bottom: 12px;
+      }
+      button.submit {
+        width: 100%;
+        background: linear-gradient(135deg, #185fa5, #0ea5a0);
+        color: white;
+        border: none;
+        padding: 13px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button.submit:active {
+        filter: brightness(0.95);
+      }
+      button.submit:disabled {
+        background: #a9b5c0;
+        cursor: default;
+      }
+      #status {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 10px;
+        min-height: 18px;
+        text-align: center;
+      }
+      #status.error {
+        color: var(--danger);
+      }
+      #report {
+        margin-top: 24px;
+      }
+      .loc-block {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 18px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 24px rgba(20, 40, 70, 0.06);
+      }
+      .loc-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 4px;
+      }
+      .loc-icon {
+        font-size: 30px;
+        line-height: 1;
+      }
+      .location-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .location-sub {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin: 0 0 16px;
+      }
+      .location-sub.error {
+        color: var(--danger);
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .stat-card {
+        background: #f4f7fb;
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      .stat-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin: 0 0 3px;
+      }
+      .stat-value {
+        font-size: 19px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .stat-value.warm {
+        color: var(--warm);
+      }
+      .stat-value.cold {
+        color: var(--accent);
+      }
+      .stat-value.rain {
+        color: var(--rain);
+      }
+      .chart-wrap {
+        position: relative;
+        height: 200px;
+        margin-bottom: 18px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 9px 6px;
+        text-align: center;
+        font-size: 13px;
+        border-bottom: 1px solid var(--border);
+      }
+      th {
+        font-weight: 500;
+        color: var(--text-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      td.day {
+        text-align: left;
+        font-weight: 500;
+      }
+      td.icon {
+        font-size: 17px;
+      }
+      .rain {
+        color: var(--rain);
+      }
+      tbody tr {
+        cursor: pointer;
+      }
+      tbody tr:active {
+        background: #f4f7fb;
+      }
+      .row-hint {
+        text-align: center;
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 8px;
+      }
 
-  .overlay {
-    position: fixed; inset: 0; background: rgba(10, 15, 25, 0.45);
-    display: none; align-items: flex-end; justify-content: center;
-    z-index: 100;
-  }
-  .overlay.open { display: flex; }
-  .drawer {
-    background: var(--card);
-    width: 100%; max-width: 680px;
-    max-height: 88vh;
-    overflow-y: auto;
-    border-radius: 20px 20px 0 0;
-    padding: 20px 20px 24px;
-    transform: translateY(100%);
-    transition: transform 0.25s ease;
-  }
-  .overlay.open .drawer { transform: translateY(0); }
-  .drawer-handle {
-    width: 40px; height: 4px; background: var(--border); border-radius: 2px;
-    margin: 0 auto 16px;
-  }
-  .drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-  .drawer-icon { font-size: 40px; }
-  .drawer-title { font-size: 19px; font-weight: 700; margin: 0; }
-  .drawer-sub { font-size: 13px; color: var(--text-muted); margin: 0 0 18px; }
-  .drawer-close {
-    background: #f4f7fb; border: none; border-radius: 50%;
-    width: 32px; height: 32px; font-size: 16px; color: var(--text-muted);
-    cursor: pointer; flex-shrink: 0;
-  }
-  .drawer-stats {
-    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px; margin-bottom: 16px;
-  }
-  .drawer-stat { background: #f4f7fb; border-radius: 10px; padding: 10px 12px; }
-  .drawer-stat .k { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin: 0 0 3px; }
-  .drawer-stat .v { font-size: 17px; font-weight: 700; margin: 0; }
-  .reco-box {
-    background: #eefaf6; border: 1px solid #cdeee4; border-radius: 12px;
-    padding: 14px; font-size: 14px; line-height: 1.5; color: #0c4f43;
-  }
-  .reco-box .reco-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #0c8f74; margin: 0 0 6px; }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 15, 25, 0.45);
+        display: none;
+        align-items: flex-end;
+        justify-content: center;
+        z-index: 100;
+      }
+      .overlay.open {
+        display: flex;
+      }
+      .drawer {
+        background: var(--card);
+        width: 100%;
+        max-width: 680px;
+        max-height: 88vh;
+        overflow-y: auto;
+        border-radius: 20px 20px 0 0;
+        padding: 20px 20px 24px;
+        transform: translateY(100%);
+        transition: transform 0.25s ease;
+      }
+      .overlay.open .drawer {
+        transform: translateY(0);
+      }
+      .drawer-handle {
+        width: 40px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        margin: 0 auto 16px;
+      }
+      .drawer-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+      .drawer-icon {
+        font-size: 40px;
+      }
+      .drawer-title {
+        font-size: 19px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .drawer-sub {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin: 0 0 18px;
+      }
+      .drawer-close {
+        background: #f4f7fb;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+        color: var(--text-muted);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+      .drawer-stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .drawer-stat {
+        background: #f4f7fb;
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      .drawer-stat .k {
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin: 0 0 3px;
+      }
+      .drawer-stat .v {
+        font-size: 17px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .reco-box {
+        background: #eefaf6;
+        border: 1px solid #cdeee4;
+        border-radius: 12px;
+        padding: 14px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #0c4f43;
+      }
+      .reco-box .reco-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #0c8f74;
+        margin: 0 0 6px;
+      }
 
-  /* calendar drawer */
-  .cal-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-  .cal-preset {
-    background: #f4f7fb; border: none; border-radius: 20px;
-    padding: 8px 14px; font-size: 13px; color: var(--accent-dark);
-    cursor: pointer; font-weight: 500;
-  }
-  .cal-preset:active { background: #e6ecf4; }
-  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .cal-nav-btn {
-    background: #f4f7fb; border: none; border-radius: 50%;
-    width: 34px; height: 34px; font-size: 16px; color: var(--text);
-    cursor: pointer;
-  }
-  .cal-month-label { font-size: 15px; font-weight: 600; }
-  .cal-weekdays {
-    display: grid; grid-template-columns: repeat(7, 1fr);
-    text-align: center; font-size: 11px; color: var(--text-muted);
-    margin-bottom: 4px; text-transform: uppercase;
-  }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-  .cal-day {
-    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-    font-size: 14px; border: none; background: none; color: var(--text);
-    cursor: pointer; border-radius: 50%; position: relative;
-  }
-  .cal-day.empty { cursor: default; }
-  .cal-day.in-range { background: #e6f1fb; border-radius: 0; }
-  .cal-day.in-range.range-start { border-radius: 50% 0 0 50%; }
-  .cal-day.in-range.range-end { border-radius: 0 50% 50% 0; }
-  .cal-day.range-start .cal-day-num, .cal-day.range-end .cal-day-num {
-    background: var(--accent); color: white; border-radius: 50%;
-    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-  }
-  .cal-day-num { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-  .cal-day.today .cal-day-num { font-weight: 700; color: var(--accent); }
-  .cal-summary {
-    text-align: center; font-size: 13px; color: var(--text-muted);
-    margin: 14px 0 10px;
-  }
-  .cal-summary strong { color: var(--text); }
-  .cal-actions { display: flex; gap: 10px; }
-  .cal-actions button {
-    flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
-  }
-  .cal-cancel { background: #f4f7fb; border: none; color: var(--text-muted); }
-  .cal-apply { background: linear-gradient(135deg, #185fa5, #0ea5a0); border: none; color: white; }
-  .cal-apply:disabled { background: #c6cdd6; }
+      /* calendar drawer */
+      .cal-presets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .cal-preset {
+        background: #f4f7fb;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 14px;
+        font-size: 13px;
+        color: var(--accent-dark);
+        cursor: pointer;
+        font-weight: 500;
+      }
+      .cal-preset:active {
+        background: #e6ecf4;
+      }
+      .cal-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .cal-nav-btn {
+        background: #f4f7fb;
+        border: none;
+        border-radius: 50%;
+        width: 34px;
+        height: 34px;
+        font-size: 16px;
+        color: var(--text);
+        cursor: pointer;
+      }
+      .cal-month-label {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .cal-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        text-align: center;
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+      .cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+      }
+      .cal-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        border: none;
+        background: none;
+        color: var(--text);
+        cursor: pointer;
+        border-radius: 50%;
+        position: relative;
+      }
+      .cal-day.empty {
+        cursor: default;
+      }
+      .cal-day.in-range {
+        background: #e6f1fb;
+        border-radius: 0;
+      }
+      .cal-day.in-range.range-start {
+        border-radius: 50% 0 0 50%;
+      }
+      .cal-day.in-range.range-end {
+        border-radius: 0 50% 50% 0;
+      }
+      .cal-day.range-start .cal-day-num,
+      .cal-day.range-end .cal-day-num {
+        background: var(--accent);
+        color: white;
+        border-radius: 50%;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .cal-day-num {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+      }
+      .cal-day.today .cal-day-num {
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .cal-summary {
+        text-align: center;
+        font-size: 13px;
+        color: var(--text-muted);
+        margin: 14px 0 10px;
+      }
+      .cal-summary strong {
+        color: var(--text);
+      }
+      .cal-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .cal-actions button {
+        flex: 1;
+        padding: 12px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .cal-cancel {
+        background: #f4f7fb;
+        border: none;
+        color: var(--text-muted);
+      }
+      .cal-apply {
+        background: linear-gradient(135deg, #185fa5, #0ea5a0);
+        border: none;
+        color: white;
+      }
+      .cal-apply:disabled {
+        background: #c6cdd6;
+      }
 
-  .hidden { display: none !important; }
+      .hidden {
+        display: none !important;
+      }
 
-  /* collapsed summary panel */
-  #summary-panel {
-    background: var(--card);
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 8px 24px rgba(20, 40, 70, 0.08);
-  }
-  .summary-head {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  .summary-title { font-size: 15px; font-weight: 600; margin: 0; }
-  .edit-btn {
-    background: #f4f7fb; border: none; border-radius: 20px;
-    padding: 7px 14px; font-size: 13px; font-weight: 500;
-    color: var(--accent-dark); cursor: pointer; display: flex; align-items: center; gap: 5px;
-  }
-  #summary-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
-  .summary-row {
-    display: flex; align-items: center; gap: 10px;
-    background: #f8fafc; border-radius: 10px; padding: 10px 12px;
-  }
-  .summary-pin { font-size: 16px; flex-shrink: 0; }
-  .summary-loc { font-size: 14px; font-weight: 600; margin: 0; }
-  .summary-dates { font-size: 12px; color: var(--text-muted); margin: 2px 0 0; }
+      /* collapsed summary panel */
+      #summary-panel {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 8px 24px rgba(20, 40, 70, 0.08);
+      }
+      .summary-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .summary-title {
+        font-size: 15px;
+        font-weight: 600;
+        margin: 0;
+      }
+      .edit-btn {
+        background: #f4f7fb;
+        border: none;
+        border-radius: 20px;
+        padding: 7px 14px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--accent-dark);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      #summary-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .summary-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      .summary-pin {
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .summary-loc {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+      }
+      .summary-dates {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin: 2px 0 0;
+      }
 
-  /* location autocomplete */
-  .loc-wrap { position: relative; }
-  .loc-suggestions {
-    position: absolute; top: 100%; left: 0; right: 0;
-    background: white; border: 1px solid var(--border); border-radius: 8px;
-    margin-top: 4px; max-height: 220px; overflow-y: auto; z-index: 20;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    display: none;
-  }
-  .loc-suggestions.open { display: block; }
-  .loc-suggestion { padding: 10px 12px; font-size: 14px; cursor: pointer; border-bottom: 1px solid var(--border); }
-  .loc-suggestion:last-child { border-bottom: none; }
-  .loc-suggestion:active { background: #f4f7fb; }
-  .loc-suggestion .sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+      /* location autocomplete */
+      .loc-wrap {
+        position: relative;
+      }
+      .loc-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-top: 4px;
+        max-height: 220px;
+        overflow-y: auto;
+        z-index: 20;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        display: none;
+      }
+      .loc-suggestions.open {
+        display: block;
+      }
+      .loc-suggestion {
+        padding: 10px 12px;
+        font-size: 14px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border);
+      }
+      .loc-suggestion:last-child {
+        border-bottom: none;
+      }
+      .loc-suggestion:active {
+        background: #f4f7fb;
+      }
+      .loc-suggestion .sub {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 1px;
+      }
 
-  /* footer */
-  .app-footer {
-    max-width: 680px;
-    margin: 36px auto 0;
-    padding: 0 16px;
-    text-align: center;
-  }
-  .app-footer .sources-label {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    margin: 0 0 10px;
-  }
-  .source-badges {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-  }
-  .source-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 7px 12px;
-    font-size: 12px;
-    color: var(--text-muted);
-    text-decoration: none;
-  }
-  .source-badge svg { flex-shrink: 0; }
-  .source-badge span.name { color: var(--text); font-weight: 600; }
+      /* footer */
+      .app-footer {
+        max-width: 680px;
+        margin: 36px auto 0;
+        padding: 0 16px;
+        text-align: center;
+      }
+      .app-footer .sources-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin: 0 0 10px;
+      }
+      .source-badges {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+      }
+      .source-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 7px 12px;
+        font-size: 12px;
+        color: var(--text-muted);
+        text-decoration: none;
+      }
+      .source-badge svg {
+        flex-shrink: 0;
+      }
+      .source-badge span.name {
+        color: var(--text);
+        font-weight: 600;
+      }
 
-  /* hourly chart in drawer */
-  .drawer-hourly-title {
-    font-size: 12px; font-weight: 700; text-transform: uppercase;
-    color: var(--text-muted); margin: 0 0 8px;
-  }
-  .drawer-chart-wrap { position: relative; height: 170px; margin-bottom: 18px; }
-</style>
-</head>
-<body>
-<div class="hero">
-  <h1>Reporte del clima</h1>
-  <p>Agrega uno o mas lugares con su rango de fechas y genera el reporte</p>
-</div>
-
-<div class="wrap">
-  <div id="summary-panel" class="hidden">
-    <div class="summary-head">
-      <p class="summary-title">Tus lugares y fechas</p>
-      <button type="button" class="edit-btn" id="edit-btn"><span>&#9998;</span> Editar</button>
+      /* hourly chart in drawer */
+      .drawer-hourly-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 0 0 8px;
+      }
+      .drawer-chart-wrap {
+        position: relative;
+        height: 170px;
+        margin-bottom: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hero">
+      <h1>Reporte del clima</h1>
+      <p>Agrega uno o mas lugares con su rango de fechas y genera el reporte</p>
     </div>
-    <div id="summary-list"></div>
-    <button type="button" class="submit" id="summary-generate">Actualizar reporte</button>
-  </div>
 
-  <form id="weather-form">
-    <div id="rows"></div>
-    <button type="button" class="add-btn" id="add-row">+ Agregar lugar</button>
-    <button type="submit" class="submit" id="submit-btn">Generar reporte</button>
-    <div id="status"></div>
-  </form>
+    <div class="wrap">
+      <div id="summary-panel" class="hidden">
+        <div class="summary-head">
+          <p class="summary-title">Tus lugares y fechas</p>
+          <button type="button" class="edit-btn" id="edit-btn">
+            <span>&#9998;</span> Editar
+          </button>
+        </div>
+        <div id="summary-list"></div>
+        <button type="button" class="submit" id="summary-generate">
+          Actualizar reporte
+        </button>
+      </div>
 
-  <div id="report"></div>
-</div>
+      <form id="weather-form">
+        <div id="rows"></div>
+        <button type="button" class="add-btn" id="add-row">
+          + Agregar lugar
+        </button>
+        <button type="submit" class="submit" id="submit-btn">
+          Generar reporte
+        </button>
+        <div id="status"></div>
+      </form>
 
-<div class="app-footer">
-  <p class="sources-label">Fuentes de datos</p>
-  <div class="source-badges">
-    <a class="source-badge" href="https://open-meteo.com" target="_blank" rel="noopener">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M17.5 18H6.5C4 18 2 16 2 13.5C2 11.2 3.7 9.3 5.9 9C6.6 6.1 9.2 4 12.2 4C15.8 4 18.7 6.9 18.7 10.5V10.9C20.6 11.3 22 13 22 15C22 16.7 21 18 17.5 18Z" stroke="#0ea5a0" stroke-width="1.6" stroke-linejoin="round"/>
-      </svg>
-      <span class="name">Open-Meteo</span> &middot; clima y geocodificacion
-    </a>
-    <a class="source-badge" href="https://www.chartjs.org" target="_blank" rel="noopener">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 20V10M12 20V4M20 20V14" stroke="#185fa5" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <span class="name">Chart.js</span> &middot; graficos
-    </a>
-  </div>
-</div>
+      <div id="report"></div>
+    </div>
 
-<!-- day detail drawer -->
-<div class="overlay" id="overlay">
-  <div class="drawer" id="drawer">
-    <div class="drawer-handle"></div>
-    <div class="drawer-head">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <span class="drawer-icon" id="drawer-icon"></span>
-        <div>
-          <p class="drawer-title" id="drawer-title"></p>
-          <p class="drawer-sub" id="drawer-sub" style="margin:0;"></p>
+    <div class="app-footer">
+      <p class="sources-label">Fuentes de datos</p>
+      <div class="source-badges">
+        <a
+          class="source-badge"
+          href="https://open-meteo.com"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M17.5 18H6.5C4 18 2 16 2 13.5C2 11.2 3.7 9.3 5.9 9C6.6 6.1 9.2 4 12.2 4C15.8 4 18.7 6.9 18.7 10.5V10.9C20.6 11.3 22 13 22 15C22 16.7 21 18 17.5 18Z"
+              stroke="#0ea5a0"
+              stroke-width="1.6"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span class="name">Open-Meteo</span> &middot; clima y geocodificacion
+        </a>
+        <a
+          class="source-badge"
+          href="https://www.chartjs.org"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 20V10M12 20V4M20 20V14"
+              stroke="#185fa5"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+          <span class="name">Chart.js</span> &middot; graficos
+        </a>
+      </div>
+    </div>
+
+    <!-- day detail drawer -->
+    <div class="overlay" id="overlay">
+      <div class="drawer" id="drawer">
+        <div class="drawer-handle"></div>
+        <div class="drawer-head">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <span class="drawer-icon" id="drawer-icon"></span>
+            <div>
+              <p class="drawer-title" id="drawer-title"></p>
+              <p class="drawer-sub" id="drawer-sub" style="margin: 0"></p>
+            </div>
+          </div>
+          <button class="drawer-close" id="drawer-close" aria-label="Cerrar">
+            &times;
+          </button>
+        </div>
+        <div class="drawer-stats" id="drawer-stats"></div>
+        <p class="drawer-hourly-title">Por hora</p>
+        <div class="drawer-chart-wrap">
+          <canvas
+            id="drawer-chart"
+            role="img"
+            aria-label="Temperatura y probabilidad de lluvia por hora"
+          ></canvas>
+        </div>
+        <div class="reco-box">
+          <p class="reco-title">Recomendacion del dia</p>
+          <p id="drawer-reco" style="margin: 0"></p>
         </div>
       </div>
-      <button class="drawer-close" id="drawer-close" aria-label="Cerrar">&times;</button>
     </div>
-    <div class="drawer-stats" id="drawer-stats"></div>
-    <p class="drawer-hourly-title">Por hora</p>
-    <div class="drawer-chart-wrap"><canvas id="drawer-chart" role="img" aria-label="Temperatura y probabilidad de lluvia por hora"></canvas></div>
-    <div class="reco-box">
-      <p class="reco-title">Recomendacion del dia</p>
-      <p id="drawer-reco" style="margin:0;"></p>
-    </div>
-  </div>
-</div>
 
-<!-- calendar date-range drawer -->
-<div class="overlay" id="cal-overlay">
-  <div class="drawer" id="cal-drawer">
-    <div class="drawer-handle"></div>
-    <div class="drawer-head">
-      <p class="drawer-title">Elige las fechas</p>
-      <button class="drawer-close" id="cal-close" aria-label="Cerrar">&times;</button>
-    </div>
-    <div class="cal-presets" id="cal-presets"></div>
-    <div class="cal-nav">
-      <button type="button" class="cal-nav-btn" id="cal-prev" aria-label="Mes anterior">&lsaquo;</button>
-      <span class="cal-month-label" id="cal-month-label"></span>
-      <button type="button" class="cal-nav-btn" id="cal-next" aria-label="Mes siguiente">&rsaquo;</button>
-    </div>
-    <div class="cal-weekdays" id="cal-weekdays"></div>
-    <div class="cal-grid" id="cal-grid"></div>
-    <p class="cal-summary" id="cal-summary">Toca el dia de inicio y luego el de fin</p>
-    <div class="cal-actions">
-      <button type="button" class="cal-cancel" id="cal-cancel">Cancelar</button>
-      <button type="button" class="cal-apply" id="cal-apply" disabled>Aplicar</button>
-    </div>
-  </div>
-</div>
-
-<template id="row-template">
-  <div class="row-card">
-    <button type="button" class="remove-btn" title="Quitar" aria-label="Quitar lugar">&times;</button>
-    <div class="field">
-      <label>Lugar</label>
-      <div class="loc-wrap">
-        <input type="text" class="loc-input" placeholder="Ej: Niagara Falls, NY" autocomplete="off" required>
-        <div class="loc-suggestions"></div>
+    <!-- calendar date-range drawer -->
+    <div class="overlay" id="cal-overlay">
+      <div class="drawer" id="cal-drawer">
+        <div class="drawer-handle"></div>
+        <div class="drawer-head">
+          <p class="drawer-title">Elige las fechas</p>
+          <button class="drawer-close" id="cal-close" aria-label="Cerrar">
+            &times;
+          </button>
+        </div>
+        <div class="cal-presets" id="cal-presets"></div>
+        <div class="cal-nav">
+          <button
+            type="button"
+            class="cal-nav-btn"
+            id="cal-prev"
+            aria-label="Mes anterior"
+          >
+            &lsaquo;
+          </button>
+          <span class="cal-month-label" id="cal-month-label"></span>
+          <button
+            type="button"
+            class="cal-nav-btn"
+            id="cal-next"
+            aria-label="Mes siguiente"
+          >
+            &rsaquo;
+          </button>
+        </div>
+        <div class="cal-weekdays" id="cal-weekdays"></div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <p class="cal-summary" id="cal-summary">
+          Toca el dia de inicio y luego el de fin
+        </p>
+        <div class="cal-actions">
+          <button type="button" class="cal-cancel" id="cal-cancel">
+            Cancelar
+          </button>
+          <button type="button" class="cal-apply" id="cal-apply" disabled>
+            Aplicar
+          </button>
+        </div>
       </div>
     </div>
-    <div class="field">
-      <label>Fechas</label>
-      <button type="button" class="date-range-btn placeholder">
-        <span class="cal-emoji">&#128197;</span>
-        <span class="date-range-text">Selecciona fechas</span>
-      </button>
-      <input type="hidden" class="start-input">
-      <input type="hidden" class="end-input">
-    </div>
-  </div>
-</template>
 
-<script>
-  const rowsEl = document.getElementById('rows');
-  const rowTemplate = document.getElementById('row-template');
-  const addRowBtn = document.getElementById('add-row');
-  const form = document.getElementById('weather-form');
-  const statusEl = document.getElementById('status');
-  const reportEl = document.getElementById('report');
-  const submitBtn = document.getElementById('submit-btn');
-  const overlay = document.getElementById('overlay');
-  const drawerClose = document.getElementById('drawer-close');
+    <template id="row-template">
+      <div class="row-card">
+        <button
+          type="button"
+          class="remove-btn"
+          title="Quitar"
+          aria-label="Quitar lugar"
+        >
+          &times;
+        </button>
+        <div class="field">
+          <label>Lugar</label>
+          <div class="loc-wrap">
+            <input
+              type="text"
+              class="loc-input"
+              placeholder="Ej: Niagara Falls, NY"
+              autocomplete="off"
+              required
+            />
+            <div class="loc-suggestions"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Fechas</label>
+          <button type="button" class="date-range-btn placeholder">
+            <span class="cal-emoji">&#128197;</span>
+            <span class="date-range-text">Selecciona fechas</span>
+          </button>
+          <input type="hidden" class="start-input" />
+          <input type="hidden" class="end-input" />
+        </div>
+      </div>
+    </template>
 
-  const summaryPanel = document.getElementById('summary-panel');
-  const summaryList = document.getElementById('summary-list');
-  const editBtn = document.getElementById('edit-btn');
-  const summaryGenerateBtn = document.getElementById('summary-generate');
+    <script>
+      const rowsEl = document.getElementById("rows");
+      const rowTemplate = document.getElementById("row-template");
+      const addRowBtn = document.getElementById("add-row");
+      const form = document.getElementById("weather-form");
+      const statusEl = document.getElementById("status");
+      const reportEl = document.getElementById("report");
+      const submitBtn = document.getElementById("submit-btn");
+      const overlay = document.getElementById("overlay");
+      const drawerClose = document.getElementById("drawer-close");
 
-  const calOverlay = document.getElementById('cal-overlay');
-  const calClose = document.getElementById('cal-close');
-  const calCancel = document.getElementById('cal-cancel');
-  const calApply = document.getElementById('cal-apply');
-  const calPrev = document.getElementById('cal-prev');
-  const calNext = document.getElementById('cal-next');
-  const calMonthLabel = document.getElementById('cal-month-label');
-  const calWeekdaysEl = document.getElementById('cal-weekdays');
-  const calGridEl = document.getElementById('cal-grid');
-  const calSummaryEl = document.getElementById('cal-summary');
-  const calPresetsEl = document.getElementById('cal-presets');
+      const summaryPanel = document.getElementById("summary-panel");
+      const summaryList = document.getElementById("summary-list");
+      const editBtn = document.getElementById("edit-btn");
+      const summaryGenerateBtn = document.getElementById("summary-generate");
 
-  const WEEKDAYS = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'];
-  const WEEKDAYS_SHORT = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
-  const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  const chartInstances = [];
-  let drawerChartInstance = null;
-  let blocksData = [];
-  let calRowCard = null;
-  let calViewDate = new Date();
-  let calStart = null;
-  let calEnd = null;
+      const calOverlay = document.getElementById("cal-overlay");
+      const calClose = document.getElementById("cal-close");
+      const calCancel = document.getElementById("cal-cancel");
+      const calApply = document.getElementById("cal-apply");
+      const calPrev = document.getElementById("cal-prev");
+      const calNext = document.getElementById("cal-next");
+      const calMonthLabel = document.getElementById("cal-month-label");
+      const calWeekdaysEl = document.getElementById("cal-weekdays");
+      const calGridEl = document.getElementById("cal-grid");
+      const calSummaryEl = document.getElementById("cal-summary");
+      const calPresetsEl = document.getElementById("cal-presets");
 
-  function setCookie(name, value, days) {
-    const expires = new Date(Date.now() + days * 864e5).toUTCString();
-    document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
-  }
+      const WEEKDAYS = ["dom", "lun", "mar", "mie", "jue", "vie", "sab"];
+      const WEEKDAYS_SHORT = ["D", "L", "M", "M", "J", "V", "S"];
+      const MONTHS = [
+        "enero",
+        "febrero",
+        "marzo",
+        "abril",
+        "mayo",
+        "junio",
+        "julio",
+        "agosto",
+        "septiembre",
+        "octubre",
+        "noviembre",
+        "diciembre",
+      ];
+      const chartInstances = [];
+      let drawerChartInstance = null;
+      let blocksData = [];
+      let calRowCard = null;
+      let calViewDate = new Date();
+      let calStart = null;
+      let calEnd = null;
 
-  function getCookie(name) {
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    return match ? decodeURIComponent(match[2]) : null;
-  }
-
-  function toISO(d) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return y + '-' + m + '-' + day;
-  }
-
-  function parseISO(str) {
-    return new Date(str + 'T00:00:00');
-  }
-
-  function todayStr() {
-    return toISO(new Date());
-  }
-
-  function addDays(d, n) {
-    const copy = new Date(d);
-    copy.setDate(copy.getDate() + n);
-    return copy;
-  }
-
-  function sameDay(a, b) {
-    return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-  }
-
-  function formatDate(dateStr) {
-    const d = parseISO(dateStr);
-    const weekday = WEEKDAYS[d.getDay()];
-    return weekday + ' ' + d.getDate() + '/' + (d.getMonth() + 1);
-  }
-
-  function formatDateLong(dateStr) {
-    const d = parseISO(dateStr);
-    const weekday = WEEKDAYS[d.getDay()];
-    return weekday.charAt(0).toUpperCase() + weekday.slice(1) + ' ' + d.getDate() + '/' + (d.getMonth() + 1);
-  }
-
-  function formatShort(d) {
-    return d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3);
-  }
-
-  // ---------- row management ----------
-
-  function updateRowButtonLabel(card) {
-    const btn = card.querySelector('.date-range-btn');
-    const text = btn.querySelector('.date-range-text');
-    const startVal = card.querySelector('.start-input').value;
-    const endVal = card.querySelector('.end-input').value;
-    if (startVal && endVal) {
-      btn.classList.remove('placeholder');
-      if (startVal === endVal) {
-        text.textContent = formatShort(parseISO(startVal));
-      } else {
-        text.textContent = formatShort(parseISO(startVal)) + ' - ' + formatShort(parseISO(endVal));
+      function setCookie(name, value, days) {
+        const expires = new Date(Date.now() + days * 864e5).toUTCString();
+        document.cookie =
+          name +
+          "=" +
+          encodeURIComponent(value) +
+          "; expires=" +
+          expires +
+          "; path=/; SameSite=Lax";
       }
-    } else {
-      btn.classList.add('placeholder');
-      text.textContent = 'Selecciona fechas';
-    }
-  }
 
-  function formatSuggestionLabel(r) {
-    return r.name + (r.admin1 ? ', ' + r.admin1 : '') + ', ' + r.country;
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
-
-  async function fetchSuggestions(query) {
-    if (!query || query.trim().length < 2) return [];
-    const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' +
-      encodeURIComponent(query.trim()) + '&count=5&language=es&format=json';
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-      return data.results || [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function attachAutocomplete(locInput, box) {
-    let debounceTimer;
-    let lastQuery = '';
-    let currentResults = [];
-
-    function closeBox() {
-      box.classList.remove('open');
-    }
-
-    function renderResults(results) {
-      currentResults = results;
-      if (results.length === 0) {
-        box.innerHTML = '';
-        closeBox();
-        return;
+      function getCookie(name) {
+        const match = document.cookie.match(
+          new RegExp("(^| )" + name + "=([^;]+)"),
+        );
+        return match ? decodeURIComponent(match[2]) : null;
       }
-      box.innerHTML = results.map(r => {
-        const sub = [r.admin1, r.country].filter(Boolean).join(', ');
-        return '<div class="loc-suggestion">' +
-          '<div>' + escapeHtml(r.name) + '</div>' +
-          (sub ? '<div class="sub">' + escapeHtml(sub) + '</div>' : '') +
-          '</div>';
-      }).join('');
-      box.classList.add('open');
-      Array.from(box.children).forEach((el, idx) => {
-        el.addEventListener('mousedown', (e) => {
-          e.preventDefault();
-          locInput.value = formatSuggestionLabel(currentResults[idx]);
-          box.innerHTML = '';
-          closeBox();
+
+      function toISO(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return y + "-" + m + "-" + day;
+      }
+
+      function parseISO(str) {
+        return new Date(str + "T00:00:00");
+      }
+
+      function todayStr() {
+        return toISO(new Date());
+      }
+
+      function addDays(d, n) {
+        const copy = new Date(d);
+        copy.setDate(copy.getDate() + n);
+        return copy;
+      }
+
+      function sameDay(a, b) {
+        return (
+          a &&
+          b &&
+          a.getFullYear() === b.getFullYear() &&
+          a.getMonth() === b.getMonth() &&
+          a.getDate() === b.getDate()
+        );
+      }
+
+      function formatDate(dateStr) {
+        const d = parseISO(dateStr);
+        const weekday = WEEKDAYS[d.getDay()];
+        return weekday + " " + d.getDate() + "/" + (d.getMonth() + 1);
+      }
+
+      function formatDateLong(dateStr) {
+        const d = parseISO(dateStr);
+        const weekday = WEEKDAYS[d.getDay()];
+        return (
+          weekday.charAt(0).toUpperCase() +
+          weekday.slice(1) +
+          " " +
+          d.getDate() +
+          "/" +
+          (d.getMonth() + 1)
+        );
+      }
+
+      function formatShort(d) {
+        return d.getDate() + " " + MONTHS[d.getMonth()].slice(0, 3);
+      }
+
+      // ---------- row management ----------
+
+      function updateRowButtonLabel(card) {
+        const btn = card.querySelector(".date-range-btn");
+        const text = btn.querySelector(".date-range-text");
+        const startVal = card.querySelector(".start-input").value;
+        const endVal = card.querySelector(".end-input").value;
+        if (startVal && endVal) {
+          btn.classList.remove("placeholder");
+          if (startVal === endVal) {
+            text.textContent = formatShort(parseISO(startVal));
+          } else {
+            text.textContent =
+              formatShort(parseISO(startVal)) +
+              " - " +
+              formatShort(parseISO(endVal));
+          }
+        } else {
+          btn.classList.add("placeholder");
+          text.textContent = "Selecciona fechas";
+        }
+      }
+
+      function formatSuggestionLabel(r) {
+        return r.name + (r.admin1 ? ", " + r.admin1 : "") + ", " + r.country;
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+
+      async function fetchSuggestions(query) {
+        if (!query || query.trim().length < 2) return [];
+        const url =
+          "https://geocoding-api.open-meteo.com/v1/search?name=" +
+          encodeURIComponent(query.trim()) +
+          "&count=5&language=es&format=json";
+        try {
+          const res = await fetch(url);
+          const data = await res.json();
+          return data.results || [];
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function attachAutocomplete(locInput, box) {
+        let debounceTimer;
+        let lastQuery = "";
+        let currentResults = [];
+
+        function closeBox() {
+          box.classList.remove("open");
+        }
+
+        function renderResults(results) {
+          currentResults = results;
+          if (results.length === 0) {
+            box.innerHTML = "";
+            closeBox();
+            return;
+          }
+          box.innerHTML = results
+            .map((r) => {
+              const sub = [r.admin1, r.country].filter(Boolean).join(", ");
+              return (
+                '<div class="loc-suggestion">' +
+                "<div>" +
+                escapeHtml(r.name) +
+                "</div>" +
+                (sub ? '<div class="sub">' + escapeHtml(sub) + "</div>" : "") +
+                "</div>"
+              );
+            })
+            .join("");
+          box.classList.add("open");
+          Array.from(box.children).forEach((el, idx) => {
+            el.addEventListener("mousedown", (e) => {
+              e.preventDefault();
+              locInput.value = formatSuggestionLabel(currentResults[idx]);
+              box.innerHTML = "";
+              closeBox();
+            });
+          });
+        }
+
+        locInput.addEventListener("input", () => {
+          clearTimeout(debounceTimer);
+          const query = locInput.value;
+          debounceTimer = setTimeout(async () => {
+            if (query === lastQuery) return;
+            lastQuery = query;
+            const results = await fetchSuggestions(query);
+            renderResults(results);
+          }, 300);
         });
-      });
-    }
 
-    locInput.addEventListener('input', () => {
-      clearTimeout(debounceTimer);
-      const query = locInput.value;
-      debounceTimer = setTimeout(async () => {
-        if (query === lastQuery) return;
-        lastQuery = query;
-        const results = await fetchSuggestions(query);
-        renderResults(results);
-      }, 300);
-    });
+        locInput.addEventListener("focus", () => {
+          if (currentResults.length > 0) box.classList.add("open");
+        });
 
-    locInput.addEventListener('focus', () => {
-      if (currentResults.length > 0) box.classList.add('open');
-    });
+        locInput.addEventListener("blur", () => {
+          setTimeout(closeBox, 150);
+        });
 
-    locInput.addEventListener('blur', () => {
-      setTimeout(closeBox, 150);
-    });
-
-    locInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeBox();
-    });
-  }
-
-  function addRow(data) {
-    const node = rowTemplate.content.cloneNode(true);
-    const card = node.querySelector('.row-card');
-    const locInput = node.querySelector('.loc-input');
-    const startInput = node.querySelector('.start-input');
-    const endInput = node.querySelector('.end-input');
-    const removeBtn = node.querySelector('.remove-btn');
-    const rangeBtn = node.querySelector('.date-range-btn');
-    const suggestionsBox = node.querySelector('.loc-suggestions');
-
-    locInput.value = (data && data.location) || '';
-    startInput.value = (data && data.start) || '';
-    endInput.value = (data && data.end) || '';
-
-    attachAutocomplete(locInput, suggestionsBox);
-
-    removeBtn.addEventListener('click', () => {
-      if (rowsEl.children.length > 1) card.remove();
-    });
-
-    rangeBtn.addEventListener('click', () => openCalendar(card));
-
-    rowsEl.appendChild(node);
-    updateRowButtonLabel(rowsEl.lastElementChild);
-  }
-
-  addRowBtn.addEventListener('click', () => addRow());
-
-  function loadSavedEntries() {
-    const saved = getCookie('wr_entries');
-    if (saved) {
-      try {
-        const entries = JSON.parse(saved);
-        if (Array.isArray(entries) && entries.length > 0) {
-          entries.forEach(e => addRow(e));
-          return true;
-        }
-      } catch (e) { /* ignore malformed cookie */ }
-    }
-    addRow();
-    return false;
-  }
-
-  // ---------- collapsed summary panel ----------
-
-  function renderSummaryList() {
-    const cards = Array.from(rowsEl.querySelectorAll('.row-card'));
-    const items = cards.map(card => {
-      const loc = card.querySelector('.loc-input').value.trim() || 'Sin nombre';
-      const startVal = card.querySelector('.start-input').value;
-      const endVal = card.querySelector('.end-input').value;
-      let dates = 'Sin fechas';
-      if (startVal && endVal) {
-        dates = startVal === endVal
-          ? formatShort(parseISO(startVal))
-          : formatShort(parseISO(startVal)) + ' - ' + formatShort(parseISO(endVal));
+        locInput.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") closeBox();
+        });
       }
-      return { loc, dates, startVal: startVal || '9999-99-99' };
-    });
-    items.sort((a, b) => {
-      if (a.startVal !== b.startVal) return a.startVal.localeCompare(b.startVal);
-      return a.loc.localeCompare(b.loc, 'es');
-    });
-    summaryList.innerHTML = items.map(item =>
-      '<div class="summary-row">' +
-      '<span class="summary-pin">&#128205;</span>' +
-      '<div><p class="summary-loc">' + item.loc + '</p><p class="summary-dates">' + item.dates + '</p></div>' +
-      '</div>'
-    ).join('');
-  }
 
-  function showSummary() {
-    renderSummaryList();
-    summaryPanel.classList.remove('hidden');
-    form.classList.add('hidden');
-  }
+      function addRow(data) {
+        const node = rowTemplate.content.cloneNode(true);
+        const card = node.querySelector(".row-card");
+        const locInput = node.querySelector(".loc-input");
+        const startInput = node.querySelector(".start-input");
+        const endInput = node.querySelector(".end-input");
+        const removeBtn = node.querySelector(".remove-btn");
+        const rangeBtn = node.querySelector(".date-range-btn");
+        const suggestionsBox = node.querySelector(".loc-suggestions");
 
-  function showForm() {
-    summaryPanel.classList.add('hidden');
-    form.classList.remove('hidden');
-  }
+        locInput.value = (data && data.location) || "";
+        startInput.value = (data && data.start) || "";
+        endInput.value = (data && data.end) || "";
 
-  editBtn.addEventListener('click', showForm);
-  summaryGenerateBtn.addEventListener('click', () => generateReport());
+        attachAutocomplete(locInput, suggestionsBox);
 
-  // ---------- calendar drawer ----------
+        removeBtn.addEventListener("click", () => {
+          if (rowsEl.children.length > 1) card.remove();
+        });
 
-  function buildPresets() {
-    const presets = [
-      { label: 'Hoy', start: () => new Date(), end: () => new Date() },
-      { label: 'Manana', start: () => addDays(new Date(), 1), end: () => addDays(new Date(), 1) },
-      { label: 'Prox. 3 dias', start: () => new Date(), end: () => addDays(new Date(), 2) },
-      { label: 'Prox. 7 dias', start: () => new Date(), end: () => addDays(new Date(), 6) }
-    ];
-    calPresetsEl.innerHTML = '';
-    presets.forEach(p => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'cal-preset';
-      btn.textContent = p.label;
-      btn.addEventListener('click', () => {
-        calStart = p.start();
-        calEnd = p.end();
-        calViewDate = new Date(calStart);
+        rangeBtn.addEventListener("click", () => openCalendar(card));
+
+        rowsEl.appendChild(node);
+        updateRowButtonLabel(rowsEl.lastElementChild);
+      }
+
+      addRowBtn.addEventListener("click", () => addRow());
+
+      function loadSavedEntries() {
+        const saved = getCookie("wr_entries");
+        if (saved) {
+          try {
+            const entries = JSON.parse(saved);
+            if (Array.isArray(entries) && entries.length > 0) {
+              entries.forEach((e) => addRow(e));
+              return true;
+            }
+          } catch (e) {
+            /* ignore malformed cookie */
+          }
+        }
+        addRow();
+        return false;
+      }
+
+      // ---------- collapsed summary panel ----------
+
+      function renderSummaryList() {
+        const cards = Array.from(rowsEl.querySelectorAll(".row-card"));
+        const items = cards.map((card) => {
+          const loc =
+            card.querySelector(".loc-input").value.trim() || "Sin nombre";
+          const startVal = card.querySelector(".start-input").value;
+          const endVal = card.querySelector(".end-input").value;
+          let dates = "Sin fechas";
+          if (startVal && endVal) {
+            dates =
+              startVal === endVal
+                ? formatShort(parseISO(startVal))
+                : formatShort(parseISO(startVal)) +
+                  " - " +
+                  formatShort(parseISO(endVal));
+          }
+          return { loc, dates, startVal: startVal || "9999-99-99" };
+        });
+        items.sort((a, b) => {
+          if (a.startVal !== b.startVal)
+            return a.startVal.localeCompare(b.startVal);
+          return a.loc.localeCompare(b.loc, "es");
+        });
+        summaryList.innerHTML = items
+          .map(
+            (item) =>
+              '<div class="summary-row">' +
+              '<span class="summary-pin">&#128205;</span>' +
+              '<div><p class="summary-loc">' +
+              item.loc +
+              '</p><p class="summary-dates">' +
+              item.dates +
+              "</p></div>" +
+              "</div>",
+          )
+          .join("");
+      }
+
+      function showSummary() {
+        renderSummaryList();
+        summaryPanel.classList.remove("hidden");
+        form.classList.add("hidden");
+      }
+
+      function showForm() {
+        summaryPanel.classList.add("hidden");
+        form.classList.remove("hidden");
+      }
+
+      editBtn.addEventListener("click", showForm);
+      summaryGenerateBtn.addEventListener("click", () => generateReport());
+
+      // ---------- calendar drawer ----------
+
+      function buildPresets() {
+        const presets = [
+          { label: "Hoy", start: () => new Date(), end: () => new Date() },
+          {
+            label: "Manana",
+            start: () => addDays(new Date(), 1),
+            end: () => addDays(new Date(), 1),
+          },
+          {
+            label: "Prox. 3 dias",
+            start: () => new Date(),
+            end: () => addDays(new Date(), 2),
+          },
+          {
+            label: "Prox. 7 dias",
+            start: () => new Date(),
+            end: () => addDays(new Date(), 6),
+          },
+        ];
+        calPresetsEl.innerHTML = "";
+        presets.forEach((p) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "cal-preset";
+          btn.textContent = p.label;
+          btn.addEventListener("click", () => {
+            calStart = p.start();
+            calEnd = p.end();
+            calViewDate = new Date(calStart);
+            renderCalendar();
+            applyCalendar();
+          });
+          calPresetsEl.appendChild(btn);
+        });
+      }
+      buildPresets();
+
+      WEEKDAYS_SHORT.forEach((w) => {
+        const span = document.createElement("span");
+        span.textContent = w;
+        calWeekdaysEl.appendChild(span);
+      });
+
+      function openCalendar(card) {
+        calRowCard = card;
+        const startVal = card.querySelector(".start-input").value;
+        const endVal = card.querySelector(".end-input").value;
+        calStart = startVal ? parseISO(startVal) : null;
+        calEnd = endVal ? parseISO(endVal) : null;
+        calViewDate = calStart ? new Date(calStart) : new Date();
         renderCalendar();
-        applyCalendar();
+        calOverlay.classList.add("open");
+      }
+
+      function closeCalendar() {
+        calOverlay.classList.remove("open");
+      }
+
+      function renderCalendar() {
+        calMonthLabel.textContent =
+          MONTHS[calViewDate.getMonth()].charAt(0).toUpperCase() +
+          MONTHS[calViewDate.getMonth()].slice(1) +
+          " " +
+          calViewDate.getFullYear();
+
+        const year = calViewDate.getFullYear();
+        const month = calViewDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const startOffset = firstDay.getDay();
+        const today = new Date();
+
+        calGridEl.innerHTML = "";
+        for (let i = 0; i < startOffset; i++) {
+          const empty = document.createElement("div");
+          empty.className = "cal-day empty";
+          calGridEl.appendChild(empty);
+        }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const date = new Date(year, month, d);
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "cal-day";
+          if (sameDay(date, today)) btn.classList.add("today");
+
+          const inRange =
+            calStart && calEnd && date >= calStart && date <= calEnd;
+          const isStart = calStart && sameDay(date, calStart);
+          const isEnd = calEnd && sameDay(date, calEnd);
+          if (inRange) btn.classList.add("in-range");
+          if (isStart) btn.classList.add("range-start");
+          if (isEnd) btn.classList.add("range-end");
+
+          const num = document.createElement("span");
+          num.className = "cal-day-num";
+          num.textContent = d;
+          btn.appendChild(num);
+
+          btn.addEventListener("click", () => handleDayClick(date));
+          calGridEl.appendChild(btn);
+        }
+
+        if (calStart && calEnd) {
+          calSummaryEl.innerHTML =
+            "<strong>" +
+            formatShort(calStart) +
+            "</strong> a <strong>" +
+            formatShort(calEnd) +
+            "</strong>";
+          calApply.disabled = false;
+        } else if (calStart) {
+          calSummaryEl.innerHTML =
+            "Inicio: <strong>" +
+            formatShort(calStart) +
+            "</strong>. Toca el dia de fin.";
+          calApply.disabled = true;
+        } else {
+          calSummaryEl.textContent = "Toca el dia de inicio y luego el de fin";
+          calApply.disabled = true;
+        }
+      }
+
+      function handleDayClick(date) {
+        if (!calStart || (calStart && calEnd)) {
+          calStart = date;
+          calEnd = null;
+        } else if (date < calStart) {
+          calEnd = calStart;
+          calStart = date;
+        } else {
+          calEnd = date;
+        }
+        renderCalendar();
+      }
+
+      function applyCalendar() {
+        if (!calStart || !calEnd || !calRowCard) {
+          closeCalendar();
+          return;
+        }
+        calRowCard.querySelector(".start-input").value = toISO(calStart);
+        calRowCard.querySelector(".end-input").value = toISO(calEnd);
+        updateRowButtonLabel(calRowCard);
+        closeCalendar();
+      }
+
+      calPrev.addEventListener("click", () => {
+        calViewDate = new Date(
+          calViewDate.getFullYear(),
+          calViewDate.getMonth() - 1,
+          1,
+        );
+        renderCalendar();
       });
-      calPresetsEl.appendChild(btn);
-    });
-  }
-  buildPresets();
+      calNext.addEventListener("click", () => {
+        calViewDate = new Date(
+          calViewDate.getFullYear(),
+          calViewDate.getMonth() + 1,
+          1,
+        );
+        renderCalendar();
+      });
+      calClose.addEventListener("click", closeCalendar);
+      calCancel.addEventListener("click", closeCalendar);
+      calApply.addEventListener("click", applyCalendar);
+      calOverlay.addEventListener("click", (e) => {
+        if (e.target === calOverlay) closeCalendar();
+      });
 
-  WEEKDAYS_SHORT.forEach(w => {
-    const span = document.createElement('span');
-    span.textContent = w;
-    calWeekdaysEl.appendChild(span);
-  });
+      // ---------- weather icon + recommendation ----------
 
-  function openCalendar(card) {
-    calRowCard = card;
-    const startVal = card.querySelector('.start-input').value;
-    const endVal = card.querySelector('.end-input').value;
-    calStart = startVal ? parseISO(startVal) : null;
-    calEnd = endVal ? parseISO(endVal) : null;
-    calViewDate = calStart ? new Date(calStart) : new Date();
-    renderCalendar();
-    calOverlay.classList.add('open');
-  }
-
-  function closeCalendar() {
-    calOverlay.classList.remove('open');
-  }
-
-  function renderCalendar() {
-    calMonthLabel.textContent = MONTHS[calViewDate.getMonth()].charAt(0).toUpperCase() +
-      MONTHS[calViewDate.getMonth()].slice(1) + ' ' + calViewDate.getFullYear();
-
-    const year = calViewDate.getFullYear();
-    const month = calViewDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const startOffset = firstDay.getDay();
-    const today = new Date();
-
-    calGridEl.innerHTML = '';
-    for (let i = 0; i < startOffset; i++) {
-      const empty = document.createElement('div');
-      empty.className = 'cal-day empty';
-      calGridEl.appendChild(empty);
-    }
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = new Date(year, month, d);
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'cal-day';
-      if (sameDay(date, today)) btn.classList.add('today');
-
-      const inRange = calStart && calEnd && date >= calStart && date <= calEnd;
-      const isStart = calStart && sameDay(date, calStart);
-      const isEnd = calEnd && sameDay(date, calEnd);
-      if (inRange) btn.classList.add('in-range');
-      if (isStart) btn.classList.add('range-start');
-      if (isEnd) btn.classList.add('range-end');
-
-      const num = document.createElement('span');
-      num.className = 'cal-day-num';
-      num.textContent = d;
-      btn.appendChild(num);
-
-      btn.addEventListener('click', () => handleDayClick(date));
-      calGridEl.appendChild(btn);
-    }
-
-    if (calStart && calEnd) {
-      calSummaryEl.innerHTML = '<strong>' + formatShort(calStart) + '</strong> a <strong>' + formatShort(calEnd) + '</strong>';
-      calApply.disabled = false;
-    } else if (calStart) {
-      calSummaryEl.innerHTML = 'Inicio: <strong>' + formatShort(calStart) + '</strong>. Toca el dia de fin.';
-      calApply.disabled = true;
-    } else {
-      calSummaryEl.textContent = 'Toca el dia de inicio y luego el de fin';
-      calApply.disabled = true;
-    }
-  }
-
-  function handleDayClick(date) {
-    if (!calStart || (calStart && calEnd)) {
-      calStart = date;
-      calEnd = null;
-    } else if (date < calStart) {
-      calEnd = calStart;
-      calStart = date;
-    } else {
-      calEnd = date;
-    }
-    renderCalendar();
-  }
-
-  function applyCalendar() {
-    if (!calStart || !calEnd || !calRowCard) {
-      closeCalendar();
-      return;
-    }
-    calRowCard.querySelector('.start-input').value = toISO(calStart);
-    calRowCard.querySelector('.end-input').value = toISO(calEnd);
-    updateRowButtonLabel(calRowCard);
-    closeCalendar();
-  }
-
-  calPrev.addEventListener('click', () => {
-    calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth() - 1, 1);
-    renderCalendar();
-  });
-  calNext.addEventListener('click', () => {
-    calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth() + 1, 1);
-    renderCalendar();
-  });
-  calClose.addEventListener('click', closeCalendar);
-  calCancel.addEventListener('click', closeCalendar);
-  calApply.addEventListener('click', applyCalendar);
-  calOverlay.addEventListener('click', (e) => {
-    if (e.target === calOverlay) closeCalendar();
-  });
-
-  // ---------- weather icon + recommendation ----------
-
-  function weatherIcon(prob) {
-    if (prob >= 70) return '\u26c8\ufe0f';
-    if (prob >= 40) return '\ud83c\udf27\ufe0f';
-    if (prob >= 15) return '\u26c5';
-    return '\u2600\ufe0f';
-  }
-
-  function buildRecommendation(day) {
-    const parts = [];
-    const feelsMax = day.feelsMax;
-
-    if (feelsMax <= 8) parts.push('Hace bastante frio: abrigate con capas, chaqueta gruesa y gorro.');
-    else if (feelsMax <= 15) parts.push('Ambiente fresco: lleva chaqueta o sueter.');
-    else if (feelsMax <= 24) parts.push('Clima agradable: ropa comoda de entretiempo.');
-    else if (feelsMax <= 30) parts.push('Ambiente calido: ropa ligera y transpirable.');
-    else parts.push('Hace mucho calor: usa ropa muy ligera y mantente hidratado.');
-
-    if (day.prob >= 60) parts.push('Alta probabilidad de lluvia, lleva paraguas o chaqueta impermeable.');
-    else if (day.prob >= 30) parts.push('Podria llover en algun momento, considera llevar paraguas.');
-
-    if (day.wind >= 40) parts.push('Viento fuerte, un rompevientos ayuda.');
-
-    if (day.uv >= 8) parts.push('Indice UV muy alto: protector solar, gorra y busca sombra al mediodia.');
-    else if (day.uv >= 6) parts.push('Indice UV alto: usa protector solar.');
-
-    return parts.join(' ');
-  }
-
-  // ---------- API ----------
-
-  async function geocode(place) {
-    const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' +
-      encodeURIComponent(place) + '&count=1&language=es&format=json';
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('No se pudo buscar el lugar.');
-    const data = await res.json();
-    if (!data.results || data.results.length === 0) {
-      throw new Error('No se encontro el lugar.');
-    }
-    return data.results[0];
-  }
-
-  async function fetchForecast(lat, lon, start, end) {
-    const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat +
-      '&longitude=' + lon +
-      '&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,' +
-      'precipitation_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max' +
-      '&hourly=temperature_2m,precipitation_probability' +
-      '&timezone=auto&start_date=' + start + '&end_date=' + end;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!res.ok || data.error) {
-      throw new Error(data.reason || 'No se pudo obtener el pronostico para esas fechas.');
-    }
-    return data;
-  }
-
-  function computeStats(daily) {
-    const maxes = daily.temperature_2m_max;
-    const mins = daily.temperature_2m_min;
-    const probs = daily.precipitation_probability_max.map(p => p == null ? 0 : p);
-    const mms = daily.precipitation_sum.map(m => m == null ? 0 : m);
-    const avgMax = maxes.reduce((a, b) => a + b, 0) / maxes.length;
-    const avgMin = mins.reduce((a, b) => a + b, 0) / mins.length;
-    const totalMm = mms.reduce((a, b) => a + b, 0);
-    const rainyDays = probs.filter(p => p >= 50).length;
-    return {
-      avgMax: Math.round(avgMax),
-      avgMin: Math.round(avgMin),
-      totalMm: totalMm.toFixed(1),
-      rainyDays
-    };
-  }
-
-  function dayFromDaily(daily, i) {
-    return {
-      date: daily.time[i],
-      max: Math.round(daily.temperature_2m_max[i]),
-      min: Math.round(daily.temperature_2m_min[i]),
-      feelsMax: daily.apparent_temperature_max[i] != null ? Math.round(daily.apparent_temperature_max[i]) : Math.round(daily.temperature_2m_max[i]),
-      feelsMin: daily.apparent_temperature_min[i] != null ? Math.round(daily.apparent_temperature_min[i]) : Math.round(daily.temperature_2m_min[i]),
-      prob: daily.precipitation_probability_max[i] != null ? Math.round(daily.precipitation_probability_max[i]) : 0,
-      mm: daily.precipitation_sum[i] != null ? daily.precipitation_sum[i].toFixed(1) : '0.0',
-      wind: daily.wind_speed_10m_max[i] != null ? Math.round(daily.wind_speed_10m_max[i]) : 0,
-      uv: daily.uv_index_max[i] != null ? Math.round(daily.uv_index_max[i]) : 0
-    };
-  }
-
-  function hourlyForDate(hourly, dateStr) {
-    const hours = [];
-    const temps = [];
-    const probs = [];
-    for (let i = 0; i < hourly.time.length; i++) {
-      if (hourly.time[i].slice(0, 10) === dateStr) {
-        hours.push(hourly.time[i].slice(11, 13) + 'h');
-        temps.push(hourly.temperature_2m[i]);
-        probs.push(hourly.precipitation_probability[i] != null ? hourly.precipitation_probability[i] : 0);
+      function weatherIcon(prob) {
+        if (prob >= 70) return "\u26c8\ufe0f";
+        if (prob >= 40) return "\ud83c\udf27\ufe0f";
+        if (prob >= 15) return "\u26c5";
+        return "\u2600\ufe0f";
       }
-    }
-    return { hours, temps, probs };
-  }
 
-  function renderDrawerChart(hourly, dateStr) {
-    const { hours, temps, probs } = hourlyForDate(hourly, dateStr);
-    if (drawerChartInstance) {
-      drawerChartInstance.destroy();
-      drawerChartInstance = null;
-    }
-    if (hours.length === 0) return;
-    const ctx = document.getElementById('drawer-chart');
-    drawerChartInstance = new Chart(ctx, {
-      data: {
-        labels: hours,
-        datasets: [
-          {
-            type: 'bar',
-            label: 'Prob. lluvia (%)',
-            data: probs,
-            backgroundColor: 'rgba(55, 138, 221, 0.3)',
-            borderRadius: 3,
-            yAxisID: 'y1',
-            order: 2
-          },
-          {
-            type: 'line',
-            label: 'Temp (C)',
-            data: temps,
-            borderColor: '#e08a2b',
-            backgroundColor: '#e08a2b',
-            borderWidth: 2,
-            pointRadius: 0,
-            tension: 0.35,
-            yAxisID: 'y',
-            order: 1
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: false } },
-        scales: {
-          y: {
-            position: 'left',
-            ticks: { font: { size: 9 } },
-            grid: { color: 'rgba(0,0,0,0.05)' }
-          },
-          y1: {
-            position: 'right', min: 0, max: 100,
-            ticks: { font: { size: 9 } },
-            grid: { display: false }
-          },
-          x: {
-            ticks: { font: { size: 9 }, maxTicksLimit: 8 },
-            grid: { display: false }
+      function buildRecommendation(day) {
+        const parts = [];
+        const feelsMax = day.feelsMax;
+
+        if (feelsMax <= 8)
+          parts.push(
+            "Hace bastante frio: abrigate con capas, chaqueta gruesa y gorro.",
+          );
+        else if (feelsMax <= 15)
+          parts.push("Ambiente fresco: lleva chaqueta o sueter.");
+        else if (feelsMax <= 24)
+          parts.push("Clima agradable: ropa comoda de entretiempo.");
+        else if (feelsMax <= 30)
+          parts.push("Ambiente calido: ropa ligera y transpirable.");
+        else
+          parts.push(
+            "Hace mucho calor: usa ropa muy ligera y mantente hidratado.",
+          );
+
+        if (day.prob >= 60)
+          parts.push(
+            "Alta probabilidad de lluvia, lleva paraguas o chaqueta impermeable.",
+          );
+        else if (day.prob >= 30)
+          parts.push(
+            "Podria llover en algun momento, considera llevar paraguas.",
+          );
+
+        if (day.wind >= 40) parts.push("Viento fuerte, un rompevientos ayuda.");
+
+        if (day.uv >= 8)
+          parts.push(
+            "Indice UV muy alto: protector solar, gorra y busca sombra al mediodia.",
+          );
+        else if (day.uv >= 6)
+          parts.push("Indice UV alto: usa protector solar.");
+
+        return parts.join(" ");
+      }
+
+      // ---------- API ----------
+
+      async function geocode(place) {
+        const url =
+          "https://geocoding-api.open-meteo.com/v1/search?name=" +
+          encodeURIComponent(place) +
+          "&count=1&language=es&format=json";
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("No se pudo buscar el lugar.");
+        const data = await res.json();
+        if (!data.results || data.results.length === 0) {
+          throw new Error("No se encontro el lugar.");
+        }
+        return data.results[0];
+      }
+
+      async function fetchForecast(lat, lon, start, end) {
+        const url =
+          "https://api.open-meteo.com/v1/forecast?latitude=" +
+          lat +
+          "&longitude=" +
+          lon +
+          "&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min," +
+          "precipitation_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max" +
+          "&hourly=temperature_2m,precipitation_probability" +
+          "&timezone=auto&start_date=" +
+          start +
+          "&end_date=" +
+          end;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(
+            data.reason || "No se pudo obtener el pronostico para esas fechas.",
+          );
+        }
+        return data;
+      }
+
+      function computeStats(daily) {
+        const maxes = daily.temperature_2m_max;
+        const mins = daily.temperature_2m_min;
+        const probs = daily.precipitation_probability_max.map((p) =>
+          p == null ? 0 : p,
+        );
+        const mms = daily.precipitation_sum.map((m) => (m == null ? 0 : m));
+        const avgMax = maxes.reduce((a, b) => a + b, 0) / maxes.length;
+        const avgMin = mins.reduce((a, b) => a + b, 0) / mins.length;
+        const totalMm = mms.reduce((a, b) => a + b, 0);
+        const rainyDays = probs.filter((p) => p >= 50).length;
+        return {
+          avgMax: Math.round(avgMax),
+          avgMin: Math.round(avgMin),
+          totalMm: totalMm.toFixed(1),
+          rainyDays,
+        };
+      }
+
+      function dayFromDaily(daily, i) {
+        return {
+          date: daily.time[i],
+          max: Math.round(daily.temperature_2m_max[i]),
+          min: Math.round(daily.temperature_2m_min[i]),
+          feelsMax:
+            daily.apparent_temperature_max[i] != null
+              ? Math.round(daily.apparent_temperature_max[i])
+              : Math.round(daily.temperature_2m_max[i]),
+          feelsMin:
+            daily.apparent_temperature_min[i] != null
+              ? Math.round(daily.apparent_temperature_min[i])
+              : Math.round(daily.temperature_2m_min[i]),
+          prob:
+            daily.precipitation_probability_max[i] != null
+              ? Math.round(daily.precipitation_probability_max[i])
+              : 0,
+          mm:
+            daily.precipitation_sum[i] != null
+              ? daily.precipitation_sum[i].toFixed(1)
+              : "0.0",
+          wind:
+            daily.wind_speed_10m_max[i] != null
+              ? Math.round(daily.wind_speed_10m_max[i])
+              : 0,
+          uv:
+            daily.uv_index_max[i] != null
+              ? Math.round(daily.uv_index_max[i])
+              : 0,
+        };
+      }
+
+      function hourlyForDate(hourly, dateStr) {
+        const hours = [];
+        const temps = [];
+        const probs = [];
+        for (let i = 0; i < hourly.time.length; i++) {
+          if (hourly.time[i].slice(0, 10) === dateStr) {
+            hours.push(hourly.time[i].slice(11, 13) + "h");
+            temps.push(hourly.temperature_2m[i]);
+            probs.push(
+              hourly.precipitation_probability[i] != null
+                ? hourly.precipitation_probability[i]
+                : 0,
+            );
           }
         }
+        return { hours, temps, probs };
       }
-    });
-  }
 
-  function openDrawer(blockIdx, dayIdx) {
-    const block = blocksData[blockIdx];
-    const day = dayFromDaily(block.daily, dayIdx);
-    const reco = buildRecommendation(day);
-
-    document.getElementById('drawer-icon').textContent = weatherIcon(day.prob);
-    document.getElementById('drawer-title').textContent = formatDateLong(day.date);
-    document.getElementById('drawer-sub').textContent = block.place.name + (block.place.admin1 ? ', ' + block.place.admin1 : '');
-    document.getElementById('drawer-stats').innerHTML =
-      '<div class="drawer-stat"><p class="k">Maxima</p><p class="v">' + day.max + '&deg;C</p></div>' +
-      '<div class="drawer-stat"><p class="k">Minima</p><p class="v">' + day.min + '&deg;C</p></div>' +
-      '<div class="drawer-stat"><p class="k">Sensacion max.</p><p class="v">' + day.feelsMax + '&deg;C</p></div>' +
-      '<div class="drawer-stat"><p class="k">Sensacion min.</p><p class="v">' + day.feelsMin + '&deg;C</p></div>' +
-      '<div class="drawer-stat"><p class="k">Prob. lluvia</p><p class="v">' + day.prob + '%</p></div>' +
-      '<div class="drawer-stat"><p class="k">Precipitacion</p><p class="v">' + day.mm + ' mm</p></div>' +
-      '<div class="drawer-stat"><p class="k">Viento max.</p><p class="v">' + day.wind + ' km/h</p></div>' +
-      '<div class="drawer-stat"><p class="k">Indice UV</p><p class="v">' + day.uv + '</p></div>';
-    document.getElementById('drawer-reco').textContent = reco;
-
-    renderDrawerChart(block.hourly, day.date);
-
-    overlay.classList.add('open');
-  }
-
-  function closeDrawer() {
-    overlay.classList.remove('open');
-  }
-
-  drawerClose.addEventListener('click', closeDrawer);
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeDrawer();
-  });
-
-  reportEl.addEventListener('click', (e) => {
-    const tr = e.target.closest('tr[data-block]');
-    if (!tr) return;
-    openDrawer(Number(tr.dataset.block), Number(tr.dataset.day));
-  });
-
-  function renderBlock(entry, place, forecast, index) {
-    const daily = forecast.daily;
-    const stats = computeStats(daily);
-    const labels = daily.time.map(formatDate);
-    const overallIcon = weatherIcon(Math.max(...daily.precipitation_probability_max.map(p => p || 0)));
-
-    blocksData[index] = { entry, place, daily, hourly: forecast.hourly };
-
-    let rows = '';
-    for (let i = 0; i < daily.time.length; i++) {
-      const day = dayFromDaily(daily, i);
-      rows += '<tr data-block="' + index + '" data-day="' + i + '">' +
-        '<td class="day">' + formatDate(day.date) + '</td>' +
-        '<td class="icon">' + weatherIcon(day.prob) + '</td>' +
-        '<td>' + day.max + '&deg;</td>' +
-        '<td>' + day.min + '&deg;</td>' +
-        '<td class="rain">' + day.prob + '%</td>' +
-        '<td class="rain">' + day.mm + ' mm</td>' +
-        '</tr>';
-    }
-
-    const canvasId = 'chart-' + index;
-    const block = document.createElement('div');
-    block.className = 'loc-block';
-    block.innerHTML =
-      '<div class="loc-head">' +
-        '<span class="loc-icon">' + overallIcon + '</span>' +
-        '<div>' +
-          '<p class="location-title">' + place.name + (place.admin1 ? ', ' + place.admin1 : '') + ', ' + place.country + '</p>' +
-        '</div>' +
-      '</div>' +
-      '<p class="location-sub">' + formatDate(entry.start) + ' - ' + formatDate(entry.end) + '</p>' +
-      '<div class="stats-grid">' +
-        '<div class="stat-card"><p class="stat-label">Prom. maxima</p><p class="stat-value warm">' + stats.avgMax + '&deg;C</p></div>' +
-        '<div class="stat-card"><p class="stat-label">Prom. minima</p><p class="stat-value cold">' + stats.avgMin + '&deg;C</p></div>' +
-        '<div class="stat-card"><p class="stat-label">Precip. total</p><p class="stat-value rain">' + stats.totalMm + ' mm</p></div>' +
-        '<div class="stat-card"><p class="stat-label">Dias con lluvia</p><p class="stat-value rain">' + stats.rainyDays + ' de ' + daily.time.length + '</p></div>' +
-      '</div>' +
-      '<div class="chart-wrap"><canvas id="' + canvasId + '" role="img" aria-label="Grafico de temperaturas y probabilidad de lluvia"></canvas></div>' +
-      '<table>' +
-      '<thead><tr><th>Dia</th><th></th><th>Max</th><th>Min</th><th>Lluvia</th><th>Precip.</th></tr></thead>' +
-      '<tbody>' + rows + '</tbody>' +
-      '</table>' +
-      '<p class="row-hint">Toca un dia para ver el detalle</p>';
-    reportEl.appendChild(block);
-
-    const ctx = document.getElementById(canvasId);
-    const chart = new Chart(ctx, {
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            type: 'bar',
-            label: 'Prob. lluvia (%)',
-            data: daily.precipitation_probability_max.map(p => p || 0),
-            backgroundColor: 'rgba(55, 138, 221, 0.35)',
-            borderRadius: 4,
-            yAxisID: 'y1',
-            order: 2
-          },
-          {
-            type: 'line',
-            label: 'Maxima (C)',
-            data: daily.temperature_2m_max,
-            borderColor: '#e08a2b',
-            backgroundColor: '#e08a2b',
-            borderWidth: 2,
-            pointRadius: 3,
-            tension: 0.3,
-            yAxisID: 'y',
-            order: 1
-          },
-          {
-            type: 'line',
-            label: 'Minima (C)',
-            data: daily.temperature_2m_min,
-            borderColor: '#185fa5',
-            backgroundColor: '#185fa5',
-            borderWidth: 2,
-            pointRadius: 3,
-            tension: 0.3,
-            yAxisID: 'y',
-            order: 1
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: false } },
-        scales: {
-          y: {
-            position: 'left',
-            title: { display: true, text: '\u00b0C', font: { size: 10 } },
-            ticks: { font: { size: 10 } },
-            grid: { color: 'rgba(0,0,0,0.05)' }
-          },
-          y1: {
-            position: 'right', min: 0, max: 100,
-            title: { display: true, text: '% lluvia', font: { size: 10 } },
-            ticks: { font: { size: 10 } },
-            grid: { display: false }
-          },
-          x: {
-            ticks: { font: { size: 10 } },
-            grid: { display: false }
-          }
+      function renderDrawerChart(hourly, dateStr) {
+        const { hours, temps, probs } = hourlyForDate(hourly, dateStr);
+        if (drawerChartInstance) {
+          drawerChartInstance.destroy();
+          drawerChartInstance = null;
         }
+        if (hours.length === 0) return;
+        const ctx = document.getElementById("drawer-chart");
+        drawerChartInstance = new Chart(ctx, {
+          data: {
+            labels: hours,
+            datasets: [
+              {
+                type: "bar",
+                label: "Prob. lluvia (%)",
+                data: probs,
+                backgroundColor: "rgba(55, 138, 221, 0.3)",
+                borderRadius: 3,
+                yAxisID: "y1",
+                order: 2,
+              },
+              {
+                type: "line",
+                label: "Temp (C)",
+                data: temps,
+                borderColor: "#e08a2b",
+                backgroundColor: "#e08a2b",
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.35,
+                yAxisID: "y",
+                order: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: { legend: { display: false } },
+            scales: {
+              y: {
+                position: "left",
+                ticks: { font: { size: 9 } },
+                grid: { color: "rgba(0,0,0,0.05)" },
+              },
+              y1: {
+                position: "right",
+                min: 0,
+                max: 100,
+                ticks: { font: { size: 9 } },
+                grid: { display: false },
+              },
+              x: {
+                ticks: { font: { size: 9 }, maxTicksLimit: 8 },
+                grid: { display: false },
+              },
+            },
+          },
+        });
       }
-    });
-    chartInstances.push(chart);
 
-    const legend = document.createElement('div');
-    legend.style.cssText = 'display:flex;flex-wrap:wrap;gap:14px;margin:-10px 0 16px;font-size:11px;color:var(--text-muted);justify-content:center;';
-    legend.innerHTML =
-      '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#e08a2b;margin-right:4px;"></span>Maxima</span>' +
-      '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#185fa5;margin-right:4px;"></span>Minima</span>' +
-      '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:rgba(55,138,221,0.5);margin-right:4px;"></span>Prob. lluvia</span>';
-    block.querySelector('.chart-wrap').insertAdjacentElement('afterend', legend);
-  }
+      function openDrawer(blockIdx, dayIdx) {
+        const block = blocksData[blockIdx];
+        const day = dayFromDaily(block.daily, dayIdx);
+        const reco = buildRecommendation(day);
 
-  function renderErrorBlock(entry, message) {
-    const block = document.createElement('div');
-    block.className = 'loc-block';
-    block.innerHTML =
-      '<p class="location-title">' + entry.location + '</p>' +
-      '<p class="location-sub error">' + message + '</p>';
-    reportEl.appendChild(block);
-  }
+        document.getElementById("drawer-icon").textContent = weatherIcon(
+          day.prob,
+        );
+        document.getElementById("drawer-title").textContent = formatDateLong(
+          day.date,
+        );
+        document.getElementById("drawer-sub").textContent =
+          block.place.name +
+          (block.place.admin1 ? ", " + block.place.admin1 : "");
+        document.getElementById("drawer-stats").innerHTML =
+          '<div class="drawer-stat"><p class="k">Maxima</p><p class="v">' +
+          day.max +
+          "&deg;C</p></div>" +
+          '<div class="drawer-stat"><p class="k">Minima</p><p class="v">' +
+          day.min +
+          "&deg;C</p></div>" +
+          '<div class="drawer-stat"><p class="k">Sensacion max.</p><p class="v">' +
+          day.feelsMax +
+          "&deg;C</p></div>" +
+          '<div class="drawer-stat"><p class="k">Sensacion min.</p><p class="v">' +
+          day.feelsMin +
+          "&deg;C</p></div>" +
+          '<div class="drawer-stat"><p class="k">Prob. lluvia</p><p class="v">' +
+          day.prob +
+          "%</p></div>" +
+          '<div class="drawer-stat"><p class="k">Precipitacion</p><p class="v">' +
+          day.mm +
+          " mm</p></div>" +
+          '<div class="drawer-stat"><p class="k">Viento max.</p><p class="v">' +
+          day.wind +
+          " km/h</p></div>" +
+          '<div class="drawer-stat"><p class="k">Indice UV</p><p class="v">' +
+          day.uv +
+          "</p></div>";
+        document.getElementById("drawer-reco").textContent = reco;
 
-  function collectEntries() {
-    const cards = Array.from(rowsEl.querySelectorAll('.row-card'));
-    return cards.map(card => ({
-      location: card.querySelector('.loc-input').value.trim(),
-      start: card.querySelector('.start-input').value,
-      end: card.querySelector('.end-input').value
-    })).filter(e => e.location && e.start && e.end);
-  }
+        renderDrawerChart(block.hourly, day.date);
 
-  async function generateReport(e) {
-    if (e) e.preventDefault();
-    const entries = collectEntries();
-    if (entries.length === 0) {
-      statusEl.textContent = 'Agrega al menos un lugar con sus fechas.';
-      statusEl.classList.add('error');
-      return;
-    }
-
-    entries.sort((a, b) => {
-      if (a.start !== b.start) return a.start.localeCompare(b.start);
-      return a.location.localeCompare(b.location, 'es');
-    });
-
-    setCookie('wr_entries', JSON.stringify(entries), 365);
-
-    statusEl.textContent = 'Generando reporte...';
-    statusEl.classList.remove('error');
-    submitBtn.disabled = true;
-    summaryGenerateBtn.disabled = true;
-    reportEl.innerHTML = '';
-    chartInstances.forEach(c => c.destroy());
-    chartInstances.length = 0;
-    if (drawerChartInstance) {
-      drawerChartInstance.destroy();
-      drawerChartInstance = null;
-    }
-    blocksData = [];
-    closeDrawer();
-
-    let i = 0;
-    for (const entry of entries) {
-      try {
-        const geo = await geocode(entry.location);
-        const forecast = await fetchForecast(geo.latitude, geo.longitude, entry.start, entry.end);
-        renderBlock(entry, geo, forecast, i);
-      } catch (err) {
-        renderErrorBlock(entry, err.message || 'Ocurrio un error.');
+        overlay.classList.add("open");
       }
-      i++;
-    }
 
-    statusEl.textContent = '';
-    submitBtn.disabled = false;
-    summaryGenerateBtn.disabled = false;
-    showSummary();
-  }
+      function closeDrawer() {
+        overlay.classList.remove("open");
+      }
 
-  form.addEventListener('submit', generateReport);
+      drawerClose.addEventListener("click", closeDrawer);
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeDrawer();
+      });
 
-  const hadSavedEntries = loadSavedEntries();
-  if (hadSavedEntries) {
-    showSummary();
-    generateReport();
-  }
-</script>
-</body>
+      reportEl.addEventListener("click", (e) => {
+        const tr = e.target.closest("tr[data-block]");
+        if (!tr) return;
+        openDrawer(Number(tr.dataset.block), Number(tr.dataset.day));
+      });
+
+      function renderBlock(entry, place, forecast, index) {
+        const daily = forecast.daily;
+        const stats = computeStats(daily);
+        const labels = daily.time.map(formatDate);
+        const overallIcon = weatherIcon(
+          Math.max(...daily.precipitation_probability_max.map((p) => p || 0)),
+        );
+
+        blocksData[index] = { entry, place, daily, hourly: forecast.hourly };
+
+        let rows = "";
+        for (let i = 0; i < daily.time.length; i++) {
+          const day = dayFromDaily(daily, i);
+          rows +=
+            '<tr data-block="' +
+            index +
+            '" data-day="' +
+            i +
+            '">' +
+            '<td class="day">' +
+            formatDate(day.date) +
+            "</td>" +
+            '<td class="icon">' +
+            weatherIcon(day.prob) +
+            "</td>" +
+            "<td>" +
+            day.max +
+            "&deg;</td>" +
+            "<td>" +
+            day.min +
+            "&deg;</td>" +
+            '<td class="rain">' +
+            day.prob +
+            "%</td>" +
+            '<td class="rain">' +
+            day.mm +
+            " mm</td>" +
+            "</tr>";
+        }
+
+        const canvasId = "chart-" + index;
+        const block = document.createElement("div");
+        block.className = "loc-block";
+        block.innerHTML =
+          '<div class="loc-head">' +
+          '<span class="loc-icon">' +
+          overallIcon +
+          "</span>" +
+          "<div>" +
+          '<p class="location-title">' +
+          place.name +
+          (place.admin1 ? ", " + place.admin1 : "") +
+          ", " +
+          place.country +
+          "</p>" +
+          "</div>" +
+          "</div>" +
+          '<p class="location-sub">' +
+          formatDate(entry.start) +
+          " - " +
+          formatDate(entry.end) +
+          "</p>" +
+          '<div class="stats-grid">' +
+          '<div class="stat-card"><p class="stat-label">Prom. maxima</p><p class="stat-value warm">' +
+          stats.avgMax +
+          "&deg;C</p></div>" +
+          '<div class="stat-card"><p class="stat-label">Prom. minima</p><p class="stat-value cold">' +
+          stats.avgMin +
+          "&deg;C</p></div>" +
+          '<div class="stat-card"><p class="stat-label">Precip. total</p><p class="stat-value rain">' +
+          stats.totalMm +
+          " mm</p></div>" +
+          '<div class="stat-card"><p class="stat-label">Dias con lluvia</p><p class="stat-value rain">' +
+          stats.rainyDays +
+          " de " +
+          daily.time.length +
+          "</p></div>" +
+          "</div>" +
+          '<div class="chart-wrap"><canvas id="' +
+          canvasId +
+          '" role="img" aria-label="Grafico de temperaturas y probabilidad de lluvia"></canvas></div>' +
+          "<table>" +
+          "<thead><tr><th>Dia</th><th></th><th>Max</th><th>Min</th><th>Lluvia</th><th>Precip.</th></tr></thead>" +
+          "<tbody>" +
+          rows +
+          "</tbody>" +
+          "</table>" +
+          '<p class="row-hint">Toca un dia para ver el detalle</p>';
+        reportEl.appendChild(block);
+
+        const ctx = document.getElementById(canvasId);
+        const chart = new Chart(ctx, {
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                type: "bar",
+                label: "Prob. lluvia (%)",
+                data: daily.precipitation_probability_max.map((p) => p || 0),
+                backgroundColor: "rgba(55, 138, 221, 0.35)",
+                borderRadius: 4,
+                yAxisID: "y1",
+                order: 2,
+              },
+              {
+                type: "line",
+                label: "Maxima (C)",
+                data: daily.temperature_2m_max,
+                borderColor: "#e08a2b",
+                backgroundColor: "#e08a2b",
+                borderWidth: 2,
+                pointRadius: 3,
+                tension: 0.3,
+                yAxisID: "y",
+                order: 1,
+              },
+              {
+                type: "line",
+                label: "Minima (C)",
+                data: daily.temperature_2m_min,
+                borderColor: "#185fa5",
+                backgroundColor: "#185fa5",
+                borderWidth: 2,
+                pointRadius: 3,
+                tension: 0.3,
+                yAxisID: "y",
+                order: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: { legend: { display: false } },
+            scales: {
+              y: {
+                position: "left",
+                title: { display: true, text: "\u00b0C", font: { size: 10 } },
+                ticks: { font: { size: 10 } },
+                grid: { color: "rgba(0,0,0,0.05)" },
+              },
+              y1: {
+                position: "right",
+                min: 0,
+                max: 100,
+                title: { display: true, text: "% lluvia", font: { size: 10 } },
+                ticks: { font: { size: 10 } },
+                grid: { display: false },
+              },
+              x: {
+                ticks: { font: { size: 10 } },
+                grid: { display: false },
+              },
+            },
+          },
+        });
+        chartInstances.push(chart);
+
+        const legend = document.createElement("div");
+        legend.style.cssText =
+          "display:flex;flex-wrap:wrap;gap:14px;margin:-10px 0 16px;font-size:11px;color:var(--text-muted);justify-content:center;";
+        legend.innerHTML =
+          '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#e08a2b;margin-right:4px;"></span>Maxima</span>' +
+          '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#185fa5;margin-right:4px;"></span>Minima</span>' +
+          '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:rgba(55,138,221,0.5);margin-right:4px;"></span>Prob. lluvia</span>';
+        block
+          .querySelector(".chart-wrap")
+          .insertAdjacentElement("afterend", legend);
+      }
+
+      function renderErrorBlock(entry, message) {
+        const block = document.createElement("div");
+        block.className = "loc-block";
+        block.innerHTML =
+          '<p class="location-title">' +
+          entry.location +
+          "</p>" +
+          '<p class="location-sub error">' +
+          message +
+          "</p>";
+        reportEl.appendChild(block);
+      }
+
+      function collectEntries() {
+        const cards = Array.from(rowsEl.querySelectorAll(".row-card"));
+        return cards
+          .map((card) => ({
+            location: card.querySelector(".loc-input").value.trim(),
+            start: card.querySelector(".start-input").value,
+            end: card.querySelector(".end-input").value,
+          }))
+          .filter((e) => e.location && e.start && e.end);
+      }
+
+      async function generateReport(e) {
+        if (e) e.preventDefault();
+        const entries = collectEntries();
+        if (entries.length === 0) {
+          statusEl.textContent = "Agrega al menos un lugar con sus fechas.";
+          statusEl.classList.add("error");
+          return;
+        }
+
+        entries.sort((a, b) => {
+          if (a.start !== b.start) return a.start.localeCompare(b.start);
+          return a.location.localeCompare(b.location, "es");
+        });
+
+        setCookie("wr_entries", JSON.stringify(entries), 365);
+
+        statusEl.textContent = "Generando reporte...";
+        statusEl.classList.remove("error");
+        submitBtn.disabled = true;
+        summaryGenerateBtn.disabled = true;
+        reportEl.innerHTML = "";
+        chartInstances.forEach((c) => c.destroy());
+        chartInstances.length = 0;
+        if (drawerChartInstance) {
+          drawerChartInstance.destroy();
+          drawerChartInstance = null;
+        }
+        blocksData = [];
+        closeDrawer();
+
+        let i = 0;
+        for (const entry of entries) {
+          try {
+            const geo = await geocode(entry.location);
+            const forecast = await fetchForecast(
+              geo.latitude,
+              geo.longitude,
+              entry.start,
+              entry.end,
+            );
+            renderBlock(entry, geo, forecast, i);
+          } catch (err) {
+            renderErrorBlock(entry, err.message || "Ocurrio un error.");
+          }
+          i++;
+        }
+
+        statusEl.textContent = "";
+        submitBtn.disabled = false;
+        summaryGenerateBtn.disabled = false;
+        showSummary();
+      }
+
+      form.addEventListener("submit", generateReport);
+
+      const hadSavedEntries = loadSavedEntries();
+      if (hadSavedEntries) {
+        showSummary();
+        generateReport();
+      }
+    </script>
+  </body>
 </html>
