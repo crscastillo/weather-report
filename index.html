@@ -7,17 +7,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
     <style>
       :root {
-        --bg: #eef1f6;
+        --bg: #f5f6fb;
         --card: #ffffff;
-        --border: #e2e4e8;
-        --text: #16181d;
-        --text-muted: #6b7280;
-        --accent: #185fa5;
-        --accent2: #0ea5a0;
-        --accent-dark: #0c447c;
-        --rain: #378add;
-        --danger: #a32d2d;
-        --warm: #e08a2b;
+        --border: #e6e7f2;
+        --text: #161827;
+        --text-muted: #6b7089;
+        --accent: #4f46e5;
+        --accent2: #06b6d4;
+        --accent-dark: #3730a3;
+        --rain: #3b82f6;
+        --danger: #dc2626;
+        --warm: #f59e0b;
+        --surface: #f2f3fa;
+        --surface-hover: #e8e9f6;
+        --disabled: #c3c6d6;
       }
       * {
         box-sizing: border-box;
@@ -33,7 +36,11 @@
         padding: 0 0 60px;
       }
       .hero {
-        background: linear-gradient(135deg, #185fa5 0%, #0ea5a0 100%);
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent2) 100%
+        );
         color: white;
         padding: 32px 16px 44px;
         text-align: center;
@@ -64,10 +71,10 @@
         background: var(--card);
         border-radius: 16px;
         padding: 16px;
-        box-shadow: 0 8px 24px rgba(20, 40, 70, 0.08);
+        box-shadow: 0 8px 24px rgba(35, 30, 90, 0.08);
       }
       .row-card {
-        background: #fbfcfe;
+        background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 12px;
         padding: 14px;
@@ -130,7 +137,7 @@
         width: 100%;
         background: white;
         color: var(--accent);
-        border: 1px dashed #b9c6d6;
+        border: 1px dashed #c7cbe8;
         padding: 11px;
         border-radius: 8px;
         font-size: 14px;
@@ -140,7 +147,7 @@
       }
       button.submit {
         width: 100%;
-        background: linear-gradient(135deg, #185fa5, #0ea5a0);
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
         color: white;
         border: none;
         padding: 13px;
@@ -153,7 +160,7 @@
         filter: brightness(0.95);
       }
       button.submit:disabled {
-        background: #a9b5c0;
+        background: var(--disabled);
         cursor: default;
       }
       #status {
@@ -174,7 +181,7 @@
         border-radius: 16px;
         padding: 18px;
         margin-bottom: 20px;
-        box-shadow: 0 8px 24px rgba(20, 40, 70, 0.06);
+        box-shadow: 0 8px 24px rgba(35, 30, 90, 0.06);
       }
       .loc-head {
         display: flex;
@@ -206,7 +213,7 @@
         margin-bottom: 18px;
       }
       .stat-card {
-        background: #f4f7fb;
+        background: var(--surface);
         border-radius: 10px;
         padding: 10px 12px;
       }
@@ -270,7 +277,7 @@
         cursor: pointer;
       }
       tbody tr:active {
-        background: #f4f7fb;
+        background: var(--surface);
       }
       .row-hint {
         text-align: center;
@@ -332,7 +339,7 @@
         margin: 0 0 18px;
       }
       .drawer-close {
-        background: #f4f7fb;
+        background: var(--surface);
         border: none;
         border-radius: 50%;
         width: 32px;
@@ -349,7 +356,7 @@
         margin-bottom: 16px;
       }
       .drawer-stat {
-        background: #f4f7fb;
+        background: var(--surface);
         border-radius: 10px;
         padding: 10px 12px;
       }
@@ -365,19 +372,19 @@
         margin: 0;
       }
       .reco-box {
-        background: #eefaf6;
-        border: 1px solid #cdeee4;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
         border-radius: 12px;
         padding: 14px;
         font-size: 14px;
         line-height: 1.5;
-        color: #0c4f43;
+        color: #065f46;
       }
       .reco-box .reco-title {
         font-size: 12px;
         font-weight: 700;
         text-transform: uppercase;
-        color: #0c8f74;
+        color: #059669;
         margin: 0 0 6px;
       }
 
@@ -389,7 +396,7 @@
         margin-bottom: 16px;
       }
       .cal-preset {
-        background: #f4f7fb;
+        background: var(--surface);
         border: none;
         border-radius: 20px;
         padding: 8px 14px;
@@ -399,7 +406,7 @@
         font-weight: 500;
       }
       .cal-preset:active {
-        background: #e6ecf4;
+        background: var(--surface-hover);
       }
       .cal-nav {
         display: flex;
@@ -408,7 +415,7 @@
         margin-bottom: 12px;
       }
       .cal-nav-btn {
-        background: #f4f7fb;
+        background: var(--surface);
         border: none;
         border-radius: 50%;
         width: 34px;
@@ -452,7 +459,7 @@
         cursor: default;
       }
       .cal-day.in-range {
-        background: #e6f1fb;
+        background: #eef0fd;
         border-radius: 0;
       }
       .cal-day.in-range.range-start {
@@ -506,17 +513,17 @@
         cursor: pointer;
       }
       .cal-cancel {
-        background: #f4f7fb;
+        background: var(--surface);
         border: none;
         color: var(--text-muted);
       }
       .cal-apply {
-        background: linear-gradient(135deg, #185fa5, #0ea5a0);
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
         border: none;
         color: white;
       }
       .cal-apply:disabled {
-        background: #c6cdd6;
+        background: var(--disabled);
       }
 
       .hidden {
@@ -528,7 +535,7 @@
         background: var(--card);
         border-radius: 16px;
         padding: 16px;
-        box-shadow: 0 8px 24px rgba(20, 40, 70, 0.08);
+        box-shadow: 0 8px 24px rgba(35, 30, 90, 0.08);
       }
       .summary-head {
         display: flex;
@@ -542,7 +549,7 @@
         margin: 0;
       }
       .edit-btn {
-        background: #f4f7fb;
+        background: var(--surface);
         border: none;
         border-radius: 20px;
         padding: 7px 14px;
@@ -564,7 +571,7 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        background: #f8fafc;
+        background: var(--surface);
         border-radius: 10px;
         padding: 10px 12px;
       }
@@ -615,7 +622,7 @@
         border-bottom: none;
       }
       .loc-suggestion:active {
-        background: #f4f7fb;
+        background: var(--surface);
       }
       .loc-suggestion .sub {
         font-size: 12px;
@@ -730,7 +737,7 @@
           >
             <path
               d="M17.5 18H6.5C4 18 2 16 2 13.5C2 11.2 3.7 9.3 5.9 9C6.6 6.1 9.2 4 12.2 4C15.8 4 18.7 6.9 18.7 10.5V10.9C20.6 11.3 22 13 22 15C22 16.7 21 18 17.5 18Z"
-              stroke="#0ea5a0"
+              stroke="#06b6d4"
               stroke-width="1.6"
               stroke-linejoin="round"
             />
@@ -752,7 +759,7 @@
           >
             <path
               d="M4 20V10M12 20V4M20 20V14"
-              stroke="#185fa5"
+              stroke="#4f46e5"
               stroke-width="2"
               stroke-linecap="round"
             />
@@ -1563,7 +1570,7 @@
                 type: "bar",
                 label: "Prob. lluvia (%)",
                 data: probs,
-                backgroundColor: "rgba(55, 138, 221, 0.3)",
+                backgroundColor: "rgba(59, 130, 246, 0.3)",
                 borderRadius: 3,
                 yAxisID: "y1",
                 order: 2,
@@ -1572,8 +1579,8 @@
                 type: "line",
                 label: "Temp (C)",
                 data: temps,
-                borderColor: "#e08a2b",
-                backgroundColor: "#e08a2b",
+                borderColor: "#f59e0b",
+                backgroundColor: "#f59e0b",
                 borderWidth: 2,
                 pointRadius: 0,
                 tension: 0.35,
@@ -1769,7 +1776,7 @@
                 type: "bar",
                 label: "Prob. lluvia (%)",
                 data: daily.precipitation_probability_max.map((p) => p || 0),
-                backgroundColor: "rgba(55, 138, 221, 0.35)",
+                backgroundColor: "rgba(59, 130, 246, 0.35)",
                 borderRadius: 4,
                 yAxisID: "y1",
                 order: 2,
@@ -1778,8 +1785,8 @@
                 type: "line",
                 label: "Maxima (C)",
                 data: daily.temperature_2m_max,
-                borderColor: "#e08a2b",
-                backgroundColor: "#e08a2b",
+                borderColor: "#f59e0b",
+                backgroundColor: "#f59e0b",
                 borderWidth: 2,
                 pointRadius: 3,
                 tension: 0.3,
@@ -1790,8 +1797,8 @@
                 type: "line",
                 label: "Minima (C)",
                 data: daily.temperature_2m_min,
-                borderColor: "#185fa5",
-                backgroundColor: "#185fa5",
+                borderColor: "#4f46e5",
+                backgroundColor: "#4f46e5",
                 borderWidth: 2,
                 pointRadius: 3,
                 tension: 0.3,
@@ -1833,9 +1840,9 @@
         legend.style.cssText =
           "display:flex;flex-wrap:wrap;gap:14px;margin:-10px 0 16px;font-size:11px;color:var(--text-muted);justify-content:center;";
         legend.innerHTML =
-          '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#e08a2b;margin-right:4px;"></span>Maxima</span>' +
-          '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#185fa5;margin-right:4px;"></span>Minima</span>' +
-          '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:rgba(55,138,221,0.5);margin-right:4px;"></span>Prob. lluvia</span>';
+          '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#f59e0b;margin-right:4px;"></span>Maxima</span>' +
+          '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#4f46e5;margin-right:4px;"></span>Minima</span>' +
+          '<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:rgba(59,130,246,0.5);margin-right:4px;"></span>Prob. lluvia</span>';
         block
           .querySelector(".chart-wrap")
           .insertAdjacentElement("afterend", legend);
